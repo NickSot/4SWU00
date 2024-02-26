@@ -4,33 +4,31 @@
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
 
-
 /****************************************************************************
-*
-* This file is used to decode eddystone information.
-*
-****************************************************************************/
+ *
+ * This file is used to decode eddystone information.
+ *
+ ****************************************************************************/
 
-#include <stdio.h>
-#include <stdint.h>
-#include <string.h>
 #include <stdbool.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <string.h>
 
+#include "esp_eddystone_api.h"
+#include "esp_eddystone_protocol.h"
 #include "esp_err.h"
 #include "esp_gap_ble_api.h"
-#include "esp_eddystone_protocol.h"
-#include "esp_eddystone_api.h"
-
 
 /* Declare static functions */
-static esp_err_t esp_eddystone_uid_received(const uint8_t* buf, uint8_t len, esp_eddystone_result_t* res);
-static esp_err_t esp_eddystone_url_received(const uint8_t* buf, uint8_t len, esp_eddystone_result_t* res);
-static char* esp_eddystone_resolve_url_scheme(const uint8_t* url_start, const uint8_t* url_end);
-static esp_err_t esp_eddystone_tlm_received(const uint8_t* buf, uint8_t len, esp_eddystone_result_t* res);
-static esp_err_t esp_eddystone_get_inform(const uint8_t* buf, uint8_t len, esp_eddystone_result_t* res);
+static esp_err_t esp_eddystone_uid_received(const uint8_t *buf, uint8_t len, esp_eddystone_result_t *res);
+static esp_err_t esp_eddystone_url_received(const uint8_t *buf, uint8_t len, esp_eddystone_result_t *res);
+static char *esp_eddystone_resolve_url_scheme(const uint8_t *url_start, const uint8_t *url_end);
+static esp_err_t esp_eddystone_tlm_received(const uint8_t *buf, uint8_t len, esp_eddystone_result_t *res);
+static esp_err_t esp_eddystone_get_inform(const uint8_t *buf, uint8_t len, esp_eddystone_result_t *res);
 
 /* Eddystone-URL scheme prefixes */
-static const char* eddystone_url_prefix[4] = {
+static const char *eddystone_url_prefix[4] = {
     "http://www.",
     "https://www.",
     "http://",
@@ -38,7 +36,7 @@ static const char* eddystone_url_prefix[4] = {
 };
 
 /* Eddystone-URL HTTP URL encoding */
-static const char* eddystone_url_encoding[14] = {
+static const char *eddystone_url_encoding[14] = {
     ".com/",
     ".org/",
     ".edu/",
@@ -53,7 +51,7 @@ static const char* eddystone_url_encoding[14] = {
     ".info",
     ".biz",
     ".gov"
- };
+};
 
 /****************** Eddystone-UID **************
 Byte offset	    Field	       Description
@@ -79,29 +77,27 @@ Byte offset	    Field	       Description
    19	        RFU	           Reserved for future use, must be0x00
 *********************************************/
 /* decode and store received UID */
-static esp_err_t esp_eddystone_uid_received(const uint8_t* buf, uint8_t len, esp_eddystone_result_t* res)
-{
+static esp_err_t esp_eddystone_uid_received(const uint8_t *buf, uint8_t len, esp_eddystone_result_t *res) {
     uint8_t pos = 0;
-    //1-byte Ranging Data + 10-byte Namespace + 6-byte Instance
-    if((len != EDDYSTONE_UID_DATA_LEN) && (len != (EDDYSTONE_UID_RFU_LEN+EDDYSTONE_UID_DATA_LEN))) {
-        //ERROR:uid len wrong
+    // 1-byte Ranging Data + 10-byte Namespace + 6-byte Instance
+    if ((len != EDDYSTONE_UID_DATA_LEN) && (len != (EDDYSTONE_UID_RFU_LEN + EDDYSTONE_UID_DATA_LEN))) {
+        // ERROR:uid len wrong
         return -1;
     }
     res->inform.uid.ranging_data = buf[pos++];
-    for(int i=0; i<EDDYSTONE_UID_NAMESPACE_LEN; i++) {
+    for (int i = 0; i < EDDYSTONE_UID_NAMESPACE_LEN; i++) {
         res->inform.uid.namespace_id[i] = buf[pos++];
     }
-    for(int i=0; i<EDDYSTONE_UID_INSTANCE_LEN; i++) {
+    for (int i = 0; i < EDDYSTONE_UID_INSTANCE_LEN; i++) {
         res->inform.uid.instance_id[i] = buf[pos++];
     }
     return 0;
 }
 
 /* resolve received URL to url_res pointer */
-static char* esp_eddystone_resolve_url_scheme(const uint8_t *url_start, const uint8_t *url_end)
-{
+static char *esp_eddystone_resolve_url_scheme(const uint8_t *url_start, const uint8_t *url_end) {
     int pos = 0;
-    static char url_buf[100] = {0};
+    static char url_buf[100] = { 0 };
     const uint8_t *p = url_start;
 
     pos += sprintf(&url_buf[pos], "%s", eddystone_url_prefix[*p++]);
@@ -125,16 +121,15 @@ Frame Specification
     3+	       Encoded URL	    Length 1-17
 *******************************************************/
 /* decode and store received URL, the pointer url_res points to the resolved url */
-static esp_err_t esp_eddystone_url_received(const uint8_t* buf, uint8_t len, esp_eddystone_result_t* res)
-{
+static esp_err_t esp_eddystone_url_received(const uint8_t *buf, uint8_t len, esp_eddystone_result_t *res) {
     char *url_res = NULL;
     uint8_t pos = 0;
-    if(len-EDDYSTONE_URL_TX_POWER_LEN > EDDYSTONE_URL_MAX_LEN) {
-        //ERROR:too long url
+    if (len - EDDYSTONE_URL_TX_POWER_LEN > EDDYSTONE_URL_MAX_LEN) {
+        // ERROR:too long url
         return -1;
     }
     res->inform.url.tx_power = buf[pos++];
-    url_res = esp_eddystone_resolve_url_scheme(buf+pos, buf+len-1);
+    url_res = esp_eddystone_resolve_url_scheme(buf + pos, buf + len - 1);
     memcpy(&res->inform.url.url, url_res, strlen(url_res));
     res->inform.url.url[strlen(url_res)] = '\0';
     return 0;
@@ -159,11 +154,10 @@ Byte offset	       Field	     Description
     13	          SEC_CNT[3]
 ************************************************/
 /* decode and store received TLM */
-static esp_err_t esp_eddystone_tlm_received(const uint8_t* buf, uint8_t len, esp_eddystone_result_t* res)
-{
+static esp_err_t esp_eddystone_tlm_received(const uint8_t *buf, uint8_t len, esp_eddystone_result_t *res) {
     uint8_t pos = 0;
-    if(len > EDDYSTONE_TLM_DATA_LEN) {
-        //ERROR:TLM too long
+    if (len > EDDYSTONE_TLM_DATA_LEN) {
+        // ERROR:TLM too long
         return -1;
     }
     res->inform.tlm.version = buf[pos++];
@@ -180,11 +174,9 @@ static esp_err_t esp_eddystone_tlm_received(const uint8_t* buf, uint8_t len, esp
     return 0;
 }
 
-static esp_err_t esp_eddystone_get_inform(const uint8_t* buf, uint8_t len, esp_eddystone_result_t* res)
-{
-    static esp_err_t ret=-1;
-    switch(res->common.frame_type)
-    {
+static esp_err_t esp_eddystone_get_inform(const uint8_t *buf, uint8_t len, esp_eddystone_result_t *res) {
+    static esp_err_t ret = -1;
+    switch (res->common.frame_type) {
         case EDDYSTONE_FRAME_TYPE_UID: {
             ret = esp_eddystone_uid_received(buf, len, res);
             break;
@@ -203,28 +195,25 @@ static esp_err_t esp_eddystone_get_inform(const uint8_t* buf, uint8_t len, esp_e
     return ret;
 }
 
-esp_err_t esp_eddystone_decode(const uint8_t* buf, uint8_t len, esp_eddystone_result_t* res)
-{
+esp_err_t esp_eddystone_decode(const uint8_t *buf, uint8_t len, esp_eddystone_result_t *res) {
     if (len == 0 || buf == NULL || res == NULL) {
         return -1;
     }
-    uint8_t pos=0;
-    while(res->common.srv_data_type != EDDYSTONE_SERVICE_UUID)
-    {
+    uint8_t pos = 0;
+    while (res->common.srv_data_type != EDDYSTONE_SERVICE_UUID) {
         pos++;
-        if(pos >= len ) {
+        if (pos >= len) {
             return -1;
         }
         uint8_t ad_type = buf[pos++];
-        switch(ad_type)
-        {
+        switch (ad_type) {
             case ESP_BLE_AD_TYPE_FLAG: {
                 res->common.flags = buf[pos++];
                 break;
             }
             case ESP_BLE_AD_TYPE_16SRV_CMPL: {
                 uint16_t uuid = little_endian_read_16(buf, pos);
-                if(uuid != EDDYSTONE_SERVICE_UUID) {
+                if (uuid != EDDYSTONE_SERVICE_UUID) {
                     return -1;
                 }
                 res->common.srv_uuid = uuid;
@@ -235,8 +224,8 @@ esp_err_t esp_eddystone_decode(const uint8_t* buf, uint8_t len, esp_eddystone_re
                 uint16_t type = little_endian_read_16(buf, pos);
                 pos += 2;
                 uint8_t frame_type = buf[pos++];
-                if(type != EDDYSTONE_SERVICE_UUID || !(frame_type == EDDYSTONE_FRAME_TYPE_UID || frame_type == EDDYSTONE_FRAME_TYPE_URL ||
-                   frame_type == EDDYSTONE_FRAME_TYPE_TLM)) {
+                if (type != EDDYSTONE_SERVICE_UUID || !(frame_type == EDDYSTONE_FRAME_TYPE_UID || frame_type == EDDYSTONE_FRAME_TYPE_URL ||
+                                                        frame_type == EDDYSTONE_FRAME_TYPE_TLM)) {
                     return -1;
                 }
                 res->common.srv_data_type = type;
@@ -247,5 +236,5 @@ esp_err_t esp_eddystone_decode(const uint8_t* buf, uint8_t len, esp_eddystone_re
                 break;
         }
     }
-    return esp_eddystone_get_inform(buf+pos, len-pos, res);
+    return esp_eddystone_get_inform(buf + pos, len - pos, res);
 }
