@@ -1,0 +1,11 @@
+Standard: Latest
+BasedOnStyle: LLVM
+IndentWidth: 4
+ColumnLimit: 0
+AccessModifierOffset: -3
+NamespaceIndentation: All
+BreakBeforeBraces: Attach
+IndentCaseLabels: true
+FixNamespaceComments: false
+AlignOperands: true
+Cpp11BracedListStyle: false
