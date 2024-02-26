@@ -8,10 +8,11 @@
     },
     "idf.espIdfPath": "/home/dusterthefirst/esp/v5.2/esp-idf",
     "idf.openOcdConfigs": [
-        "interface/ftdi/esp32_devkitj_v1.cfg",
-        "target/esp32.cfg"
+        "board/esp32c6-builtin.cfg"
     ],
     "idf.pythonBinPath": "/home/dusterthefirst/.espressif/python_env/idf5.2_py3.12_env/bin/python",
     "idf.toolsPath": "/home/dusterthefirst/.espressif",
-    "cmake.configureOnOpen": true
+    "cmake.configureOnOpen": true,
+    "idf.port": "/dev/ttyUSB0",
+    "idf.flashType": "UART",
 }
