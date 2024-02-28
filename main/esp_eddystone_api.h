@@ -8,6 +8,7 @@
 #define __ESP_EDDYSTONE_API_H__
 
 #include "esp_eddystone_protocol.h"
+#include "esp_err.h"
 
 typedef struct {
     struct {
