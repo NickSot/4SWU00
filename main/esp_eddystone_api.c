@@ -15,9 +15,9 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "esp_err.h"
 #include "esp_eddystone_api.h"
 #include "esp_eddystone_protocol.h"
-#include "esp_err.h"
 #include "esp_gap_ble_api.h"
 
 /* Declare static functions */
