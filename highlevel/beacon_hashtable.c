@@ -19,7 +19,7 @@ void init_hashtable(BeaconHashTable* ht) {
 }
 
 int insert_beacon(BeaconHashTable* ht, BeaconData data) {
-    unsigned int index = hashFunction(data.uuid);
+    unsigned int index = hash_function(data.uuid);
     for (int i = 0; i < HASH_TABLE_SIZE; i++) {
         int try = (index + i) % HASH_TABLE_SIZE; // linear probing
         if (!ht->table[try].occupied) {
@@ -31,8 +31,8 @@ int insert_beacon(BeaconHashTable* ht, BeaconData data) {
     return 0; //table is full
 }
 
-BeaconData* getBeacon(BeaconHashTable* ht, char* uuid) {
-    unsigned int index = hashFunction(uuid);
+BeaconData* get_beacon(BeaconHashTable* ht, char* uuid) {
+    unsigned int index = hash_function(uuid);
     for (int i = 0; i < HASH_TABLE_SIZE; i++) {
         int try = (index + i) % HASH_TABLE_SIZE;
         if (ht->table[try].occupied && strcmp(ht->table[try].uuid, uuid) == 0) {
