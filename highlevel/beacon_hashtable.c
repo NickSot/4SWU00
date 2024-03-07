@@ -7,7 +7,7 @@ unsigned int hash_function(char* uuid) {
     unsigned long hash = 5381;
     int c;
     while ((c = *uuid++)) {
-        hash = ((hash << 5) + hash) + c; // hash * 33 + c
+        hash = ((hash << 5) + hash) + c; // hash * 33 + c (shift 5 bits then add 1 hash)
     }
     return hash % HASH_TABLE_SIZE;
 }
@@ -20,7 +20,7 @@ void init_hashtable(BeaconHashTable* ht) {
 
 int insert_beacon(BeaconHashTable* ht, BeaconData data) {
     unsigned int index = hashFunction(data.uuid);
-    for (int i = 0; i < HASH_TABLE_SIZE; ++i) {
+    for (int i = 0; i < HASH_TABLE_SIZE; i++) {
         int try = (index + i) % HASH_TABLE_SIZE; // linear probing
         if (!ht->table[try].occupied) {
             ht->table[try] = data;
@@ -33,7 +33,7 @@ int insert_beacon(BeaconHashTable* ht, BeaconData data) {
 
 BeaconData* getBeacon(BeaconHashTable* ht, char* uuid) {
     unsigned int index = hashFunction(uuid);
-    for (int i = 0; i < HASH_TABLE_SIZE; ++i) {
+    for (int i = 0; i < HASH_TABLE_SIZE; i++) {
         int try = (index + i) % HASH_TABLE_SIZE;
         if (ht->table[try].occupied && strcmp(ht->table[try].uuid, uuid) == 0) {
             return &(ht->table[try]);
