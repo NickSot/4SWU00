@@ -17,18 +17,7 @@ typedef struct {
         uint16_t srv_data_type; /*<! service data type */
         uint8_t frame_type;     /*<! Eddystone UID, URL or TLM */
     } common;
-    union {
-        struct {
-            /*<! Eddystone-UID */
-            int8_t ranging_data; /*<! calibrated Tx power at 0m */
-            uint8_t namespace_id[10];
-            uint8_t instance_id[6];
-        } uid;
-        struct {
-            /*<! Eddystone-URL */
-            int8_t tx_power;                 /*<! calibrated Tx power at 0m */
-            char url[EDDYSTONE_URL_MAX_LEN]; /*<! the decoded URL */
-        } url;
+    struct {
         struct {
             /*<! Eddystone-TLM */
             uint8_t version;          /*<! TLM version,0x00 for now */

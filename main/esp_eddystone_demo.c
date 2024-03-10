@@ -46,21 +46,6 @@ static esp_ble_scan_params_t ble_scan_params = {
 
 static void esp_eddystone_show_inform(const esp_eddystone_result_t *res) {
     switch (res->common.frame_type) {
-        case EDDYSTONE_FRAME_TYPE_UID: {
-            ESP_LOGI(DEMO_TAG, "Eddystone UID inform:");
-            ESP_LOGI(DEMO_TAG, "Measured power(RSSI at 0m distance):%d dbm", res->inform.uid.ranging_data);
-            ESP_LOGI(DEMO_TAG, "EDDYSTONE_DEMO: Namespace ID:0x");
-            esp_log_buffer_hex(DEMO_TAG, res->inform.uid.namespace_id, 10);
-            ESP_LOGI(DEMO_TAG, "EDDYSTONE_DEMO: Instance ID:0x");
-            esp_log_buffer_hex(DEMO_TAG, res->inform.uid.instance_id, 6);
-            break;
-        }
-        case EDDYSTONE_FRAME_TYPE_URL: {
-            ESP_LOGI(DEMO_TAG, "Eddystone URL inform:");
-            ESP_LOGI(DEMO_TAG, "Measured power(RSSI at 0m distance):%d dbm", res->inform.url.tx_power);
-            ESP_LOGI(DEMO_TAG, "URL: %s", res->inform.url.url);
-            break;
-        }
         case EDDYSTONE_FRAME_TYPE_TLM: {
             ESP_LOGI(DEMO_TAG, "Eddystone TLM inform:");
             ESP_LOGI(DEMO_TAG, "version: %d", res->inform.tlm.version);
