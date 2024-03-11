@@ -29,11 +29,16 @@
 
 #include "esp_eddystone_api.h"
 
+#include "highlevel/beacon_hashtable.h"
+
 static const char *DEMO_TAG = "EDDYSTONE_DEMO";
 
 /* declare static functions */
 static void esp_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param);
 static void esp_eddystone_show_inform(const esp_eddystone_result_t *res);
+
+BeaconHashTable ht;
+uint8_t bt_mac[6];
 
 static esp_ble_scan_params_t ble_scan_params = {
     .scan_type = BLE_SCAN_TYPE_ACTIVE,
@@ -96,6 +101,23 @@ static void esp_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *par
                         esp_log_buffer_hex("EDDYSTONE_DEMO: Device address:", scan_result->scan_rst.bda, ESP_BD_ADDR_LEN);
                         ESP_LOGI(DEMO_TAG, "RSSI of packet:%d dbm", scan_result->scan_rst.rssi);
                         esp_eddystone_show_inform(&eddystone_res);
+
+                        BeaconData data;
+                        data.last_ping = esp_log_timestamp();
+                        data.signal_strength = scan_result->scan_rst.rssi;
+                        memcpy(data.esp_mac, bt_mac, 6);
+                        memcpy(data.beacon_mac, scan_result->scan_rst.bda, 6);
+
+                        BeaconData *existing_data = get_beacon(&ht, data.beacon_mac);
+                        if (existing_data == NULL) {
+                            bool inserted = insert_beacon(&ht, data);
+                            ESP_LOGI(DEMO_TAG, "Inserted: %d", inserted);
+                        } else {
+                            memcpy(existing_data, &data, sizeof(BeaconData));
+                            existing_data->occupied = true;
+                        }
+
+                        print_hashtable(&ht);
                     }
                     break;
                 }
@@ -143,29 +165,9 @@ void app_main(void) {
     esp_bt_controller_init(&bt_cfg);
     esp_bt_controller_enable(ESP_BT_MODE_BLE);
 
-    {
-        uint8_t wifi_st_mac[6];
-        esp_read_mac(wifi_st_mac, ESP_MAC_WIFI_STA);
-        ESP_LOGI("IDK", "Wi-Fi Station MAC: " MACSTR, MAC2STR(wifi_st_mac));
-    }
-
-    {
-        uint8_t wifi_ap_mac[6];
-        esp_read_mac(wifi_ap_mac, ESP_MAC_WIFI_SOFTAP);
-        ESP_LOGI("IDK", "Wi-Fi SoftAP MAC: " MACSTR, MAC2STR(wifi_ap_mac));
-    }
-
-    {
-        uint8_t bt_mac[6];
-        esp_read_mac(bt_mac, ESP_MAC_BT);
-        ESP_LOGI("IDK", "Bluetooth MAC: " MACSTR, MAC2STR(bt_mac));
-    }
-
-    {
-        uint8_t eth_mac[6];
-        esp_read_mac(eth_mac, ESP_MAC_ETH);
-        ESP_LOGI("IDK", "Ethernet MAC: " MACSTR, MAC2STR(eth_mac));
-    }
+    init_hashtable(&ht);
+    esp_read_mac(bt_mac, ESP_MAC_BT);
+    ESP_LOGI("IDK", "Bluetooth MAC: " MACSTR, MAC2STR(bt_mac));
 
     esp_eddystone_init();
 

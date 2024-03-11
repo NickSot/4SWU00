@@ -1,5 +1,4 @@
 #include <stddef.h>
-#include <stdlib.h>
 #include <string.h>
 
 #include "tile_room_mapping.h"
@@ -13,8 +12,8 @@ void add_neighbor(RoomNode *room, RoomNode *neighbor) {
     }
 }
 
-void init_roomNode(RoomNode *room, char *id) {
-    strcpy(room->roomID, id);
+void init_roomNode(RoomNode *room, uint8_t id[ROOM_ID_SIZE]) {
+    memcpy(room->roomID, id, ROOM_ID_SIZE);
     for (int i = 0; i < MAX_NEIGHBORS; ++i) {
         room->neighbors[i] = NULL;
     }
