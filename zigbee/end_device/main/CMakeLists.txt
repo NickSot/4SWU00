@@ -1,7 +1,7 @@
 idf_component_register(
     SRCS
-    "esp_zb_switch.c"
-    "switch_driver.c"
+    "esp_zb_end_device.c"
+    "network_flow_driver.c"
     "data_structs/beacon_hashtable.c"
     "data_structs/tile_room_mapping.c"
     INCLUDE_DIRS "." "./data_structs"
