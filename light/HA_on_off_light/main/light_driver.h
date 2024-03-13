@@ -38,6 +38,8 @@
 #pragma once
 
 #include <stdbool.h>
+#include "beacon_hashtable.h"
+#include "tile_room_mapping.h"
 
 #ifdef __cplusplus
 extern "C" {

@@ -37,6 +37,8 @@
 #pragma once
 
 #include "driver/gpio.h"
+#include "beacon_hashtable.h"
+#include "tile_room_mapping.h"
 
 #ifdef __cplusplus
 extern "C" {
