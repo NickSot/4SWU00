@@ -108,13 +108,22 @@ static void esp_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *par
                         memcpy(data.esp_mac, bt_mac, 6);
                         memcpy(data.beacon_mac, scan_result->scan_rst.bda, 6);
 
-                        BeaconData *existing_data = get_beacon(&ht, data.beacon_mac);
-                        if (existing_data == NULL) {
-                            bool inserted = insert_beacon(&ht, data);
-                            ESP_LOGI(DEMO_TAG, "Inserted: %d", inserted);
-                        } else {
-                            memcpy(existing_data, &data, sizeof(BeaconData));
-                            existing_data->occupied = true;
+                        // BeaconData *existing_data = get_beacon(&ht, data.beacon_mac);
+                        // if (existing_data == NULL) {
+                        //     bool inserted = insert_beacon(&ht, data);
+                        //     ESP_LOGI(DEMO_TAG, "Inserted: %d", inserted);
+                        // } else {
+                        //     memcpy(existing_data, &data, sizeof(BeaconData));
+                        //     existing_data->occupied = true;
+                        // }
+
+                        int result = insert_or_update_beacon(&ht, data);
+                        if (result == 1) {
+                            ESP_LOGI(DEMO_TAG, "Beacon inserted: %d", true);
+                        } else if (result == 2) {
+                            ESP_LOGI(DEMO_TAG, "Beacon updated: %d", true);
+                        } else if (result == 0) {
+                            ESP_LOGI(DEMO_TAG, "Beacon processed: %d", false);
                         }
 
                         print_hashtable(&ht);

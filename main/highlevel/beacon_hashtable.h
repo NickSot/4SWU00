@@ -13,7 +13,12 @@ typedef struct {
     uint32_t last_ping;
     uint8_t esp_mac[MAC_LEN]; // MAC Address string length
     bool occupied;
+    int16_t battery_voltage; // in millivolts
+    float temperature;
+    uint32_t adv_count; // advertisement packet count since power-up
+    uint32_t up_time; // time since power-up in seconds
 } BeaconData;
+
 
 typedef struct {
     BeaconData table[HASH_TABLE_SIZE];
@@ -21,8 +26,12 @@ typedef struct {
 
 unsigned int hash_function(uint8_t beacon_mac[MAC_LEN]);
 void init_hashtable(BeaconHashTable *ht);
-bool insert_beacon(BeaconHashTable *ht, BeaconData data);
+int insert_update_beacon(BeaconHashTable *ht, BeaconData data);
 BeaconData *get_beacon(BeaconHashTable *ht, uint8_t beacon_mac[MAC_LEN]);
 void print_hashtable(BeaconHashTable *ht);
+bool delete_beacon(BeaconHashTable *ht, uint8_t beacon_mac[MAC_LEN]);
+void check_and_delete_stale_beacons(BeaconHashTable *ht);
+
+
 
 #endif
