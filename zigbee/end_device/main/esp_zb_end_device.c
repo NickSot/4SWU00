@@ -104,10 +104,10 @@ static esp_err_t zb_attribute_handler(const esp_zb_zcl_set_attr_value_message_t 
                         "Received message: error status(%d)", message->info.status);
     ESP_LOGI(TAG, "Received message: endpoint(%d), cluster(0x%x), attribute(0x%x), data size(%d)",
              message->info.dst_endpoint, message->info.cluster, message->attribute.id, message->attribute.data.size);
-    if (message->info.dst_endpoint == HA_ESP_LIGHT_ENDPOINT) {
-        if (message->info.cluster == ESP_ZB_ZCL_CLUSTER_ID_ON_OFF) {
-            if (message->attribute.id == ESP_ZB_ZCL_ATTR_ON_OFF_ON_OFF_ID &&
-                message->attribute.data.type == ESP_ZB_ZCL_ATTR_TYPE_STRUCTURE) {
+    // if (message->info.dst_endpoint == HA_ESP_LIGHT_ENDPOINT) {
+        // if (message->info.cluster == ESP_ZB_ZCL_CLUSTER_ID_ON_OFF) {
+        //     if (message->attribute.id == ESP_ZB_ZCL_ATTR_ON_OFF_ON_OFF_ID &&
+        //         message->attribute.data.type == ESP_ZB_ZCL_ATTR_TYPE_STRUCTURE) {
                 
                 BeaconData * beacon_data;
                 beacon_data = (BeaconData *)message->attribute.data.value;
@@ -120,9 +120,9 @@ static esp_err_t zb_attribute_handler(const esp_zb_zcl_set_attr_value_message_t 
                 ESP_LOGI(TAG, "receiver signal strength: %d", beacon_data->signal_strength);
 
                 light_driver_set_power(light_state);
-            }
-        }
-    }
+        //     }
+        // }
+    // }
     return ret;
 }
 
