@@ -9,19 +9,22 @@
 
 typedef struct {
     uint8_t beacon_mac[MAC_LEN];
-    int16_t signal_strength;
-    uint32_t last_ping;
     uint8_t esp_mac[MAC_LEN]; // MAC Address string length
-    bool occupied;
+    int16_t signal_strength;
     int16_t battery_voltage; // in millivolts
     float temperature;
+    uint32_t last_ping;
     uint32_t adv_count; // advertisement packet count since power-up
     uint32_t up_time; // time since power-up in seconds
 } BeaconData;
 
+typedef struct {
+    bool occupied;
+    BeaconData data;
+} BeaconDataWrapper;
 
 typedef struct {
-    BeaconData table[HASH_TABLE_SIZE];
+    BeaconDataWrapper table[HASH_TABLE_SIZE];
 } BeaconHashTable;
 
 unsigned int hash_function(uint8_t beacon_mac[MAC_LEN]);

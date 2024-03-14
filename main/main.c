@@ -103,21 +103,16 @@ static void esp_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *par
                         esp_eddystone_show_inform(&eddystone_res);
 
                         BeaconData data;
-                        data.last_ping = esp_log_timestamp();
-                        data.signal_strength = scan_result->scan_rst.rssi;
-                        memcpy(data.esp_mac, bt_mac, 6);
                         memcpy(data.beacon_mac, scan_result->scan_rst.bda, 6);
+                        memcpy(data.esp_mac, bt_mac, 6);
+                        data.signal_strength = scan_result->scan_rst.rssi;
+                        data.battery_voltage = eddystone_res.inform.tlm.battery_voltage;
+                        data.temperature = eddystone_res.inform.tlm.temperature;
+                        data.last_ping = esp_log_timestamp();
+                        data.adv_count = eddystone_res.inform.tlm.adv_count;
+                        data.up_time = eddystone_res.inform.tlm.time;
 
-                        // BeaconData *existing_data = get_beacon(&ht, data.beacon_mac);
-                        // if (existing_data == NULL) {
-                        //     bool inserted = insert_beacon(&ht, data);
-                        //     ESP_LOGI(DEMO_TAG, "Inserted: %d", inserted);
-                        // } else {
-                        //     memcpy(existing_data, &data, sizeof(BeaconData));
-                        //     existing_data->occupied = true;
-                        // }
-
-                        int result = insert_or_update_beacon(&ht, data);
+                        int result = insert_update_beacon(&ht, data);
                         if (result == 1) {
                             ESP_LOGI(DEMO_TAG, "Beacon inserted: %d", true);
                         } else if (result == 2) {
