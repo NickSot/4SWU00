@@ -107,9 +107,18 @@ static esp_err_t zb_attribute_handler(const esp_zb_zcl_set_attr_value_message_t 
     if (message->info.dst_endpoint == HA_ESP_LIGHT_ENDPOINT) {
         if (message->info.cluster == ESP_ZB_ZCL_CLUSTER_ID_ON_OFF) {
             if (message->attribute.id == ESP_ZB_ZCL_ATTR_ON_OFF_ON_OFF_ID &&
-                message->attribute.data.type == ESP_ZB_ZCL_ATTR_TYPE_BOOL) {
-                light_state = message->attribute.data.value ? *(bool *)message->attribute.data.value : light_state;
+                message->attribute.data.type == ESP_ZB_ZCL_ATTR_TYPE_STRUCTURE) {
+                
+                BeaconData * beacon_data;
+                beacon_data = (BeaconData *)message->attribute.data.value;
+
+                light_state = beacon_data->occupied;
+
+                // light_state = message->attribute.data.value ? *(bool *)message->attribute.data.value : light_state;
                 ESP_LOGI(TAG, "Light sets to %s", light_state ? "On" : "Off");
+                ESP_LOGI(TAG, "receiver MAC address: %s", beacon_data->receiver_MAC);
+                ESP_LOGI(TAG, "receiver signal strength: %d", beacon_data->signal_strength);
+
                 light_driver_set_power(light_state);
             }
         }

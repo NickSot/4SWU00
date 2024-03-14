@@ -58,16 +58,55 @@ static switch_func_pair_t button_func_pair[] = {
 
 static const char *TAG = "ESP_ZB_ON_OFF_SWITCH";
 
+// typedef struct {
+//     char uuid[UUID_LENGTH];
+//     int signal_strength;
+//     unsigned long last_pinged;
+//     char receiver_MAC[18]; // MAC Address string length
+//     int occupied;
+// } BeaconData;
+
 static void esp_zb_buttons_handler(switch_func_pair_t *button_func_pair)
 {
     if (button_func_pair->func == SWITCH_ONOFF_TOGGLE_CONTROL) {
-        /* implemented light switch toggle functionality */
-        esp_zb_zcl_on_off_cmd_t cmd_req;
+        BeaconData beacon_data;
+
+        for (int i = 0; i < UUID_LENGTH; i++) {
+            beacon_data.uuid[i] = '1';
+        }
+
+        beacon_data.signal_strength = 4;
+        beacon_data.last_pinged = 144;
+        
+        for (int i = 0; i < 18; i++) {
+            beacon_data.receiver_MAC[i] = '1';
+        }
+        
+        // beacon_data.receiver_MAC = "123412341234123412";
+        beacon_data.occupied = 0;
+
+        struct esp_zb_zcl_write_attr_cmd_s cmd_req;
+        struct esp_zb_zcl_attribute_s message;
+        struct esp_zb_zcl_attribute_data_s message_data;
+
+        message_data.type = ESP_ZB_ZCL_ATTR_TYPE_STRUCTURE;
+        message_data.size = sizeof(BeaconData) + 2;
+        message_data.value = (void *) &beacon_data;
+
+        message.id = (uint16_t) 1;
+        message.data = message_data;
+
         cmd_req.zcl_basic_cmd.src_endpoint = HA_ONOFF_SWITCH_ENDPOINT;
         cmd_req.address_mode = ESP_ZB_APS_ADDR_MODE_DST_ADDR_ENDP_NOT_PRESENT;
-        cmd_req.on_off_cmd_id = ESP_ZB_ZCL_CMD_ON_OFF_TOGGLE_ID;
-        ESP_EARLY_LOGI(TAG, "Send 'on_off toggle' command");
-        esp_zb_zcl_on_off_cmd_req(&cmd_req);
+        cmd_req.clusterID = 1;
+        // cmd_req.on_off_cmd_id = ESP_ZB_ZCL_CMD_ON_OFF_TOGGLE_ID;
+        cmd_req.attrVal = (uint8_t *) &message;
+
+        // ESP_EARLY_LOGI(TAG, "Send 'on_off toggle' command");
+        // esp_zb_zcl_on_off_cmd_req(&cmd_req);
+
+        // send a custom dummy message command
+        esp_zb_zcl_write_attr_cmd_req(&cmd_req);
     }
 }
 
