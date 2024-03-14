@@ -61,11 +61,15 @@ void print_hashtable(BeaconHashTable *ht) {
         BeaconDataWrapper beacon_data = ht->table[i];
         BeaconData data = beacon_data.data;
         if (beacon_data.occupied) {
-            ESP_LOGI("hashtable", "\tBeacon: " MACSTR " ESP: " MACSTR " Last Ping: %ld RSSI: %d dbm",
+            ESP_LOGI("hashtable", "\tBeacon: " MACSTR " ESP: " MACSTR " Last Ping: %ld | RSSI: %d dBm | Battery Voltage: %d mV | Temp deg C: %6.1f | adv: %ld | uptime: %ld",
                      MAC2STR(data.beacon_mac),
                      MAC2STR(data.esp_mac),
                      data.last_ping,
-                     data.signal_strength);
+                     data.signal_strength,
+                     data.battery_voltage,
+                     data.temperature,
+                     data.adv_count,
+                     data.up_time);
         }
     }
     ESP_LOGI("hashtable", "}");
