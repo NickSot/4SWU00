@@ -2,5 +2,9 @@ dependencies:
   idf:
     version: '>=5.0'
 description: esp-zboss library component
+repository: git://github.com/espressif/esp-zboss-lib.git
+repository_info:
+  commit_sha: 34c673c18fd2aaae4d2b34e5adae3908706d5aad
+  path: .
 url: https://github.com/espressif/esp-zboss-lib
-version: 0.7.2
+version: 1.2.1

@@ -273,6 +273,10 @@ zb_zcl_cluster_write_attr_hook_t zb_zcl_get_control4_cluster_write_attr_hook(zb_
 #define ZB_ZCL_CLUSTER_ID_REL_HUMIDITY_MEASUREMENT 0x0405U /*!< Relative humidity measurement */
 #define ZB_ZCL_CLUSTER_ID_OCCUPANCY_SENSING        0x0406U /*!< Occupancy sensing */
 
+/* Measurement and Sensing: Concentration Measurement */
+#define ZB_ZCL_CLUSTER_ID_CARBON_DIOXIDE_MEASUREMENT 0x040DU /*!< Carbon Dioxide (CO2) measurement */
+#define ZB_ZCL_CLUSTER_ID_PM2_5_MEASUREMENT          0x042AU /*!< PM2.5 measurement */
+
 /* IAS clusters */
 #define ZB_ZCL_CLUSTER_ID_IAS_ZONE 0x0500U /*!< IAS Zone cluster identifier */
 #define ZB_ZCL_CLUSTER_ID_IAS_ACE  0x0501U /*!< IAS ACE cluster identifier */
@@ -307,6 +311,7 @@ zb_zcl_cluster_write_attr_hook_t zb_zcl_get_control4_cluster_write_attr_hook(zb_
 /** @endcond */ /* touchlink */
 
 /************** Manufacturer specific clusters ****************/
+#define ZB_ZCL_CLUSTER_CUSTOM_ID_MIN_VAL 0xfc00U /*!< Manufacturer specific minimum custom cluster */
 
 #define ZB_ZCL_CLUSTER_ID_TUNNEL     0xfc00U /*!< Manufacturer specific Tunnel cluster */
 #define ZB_ZCL_CLUSTER_ID_IR_BLASTER 0xfc01U /*!< Manufacturer specific IR Blaster cluster */
@@ -424,7 +429,7 @@ typedef zb_uint8_t zb_zcl_status_t;
 /** @brief ZCL global attribute: cluster revision returned by default.
     Used if the GLOBAL_CLUSTER_REVISION attribute is undefined for the cluster/role.
 */
-#define ZB_ZCL_GLOBAL_CLUSTER_REVISION_DEFAULT 1
+#define ZB_ZCL_GLOBAL_CLUSTER_REVISION_DEFAULT 4
 
 /** @brief ZCL pre-ZCL8 API default cluster revision (minimal Cluster revision)
 */
@@ -663,6 +668,9 @@ static ZB_INLINE zb_uint16_t zb_zcl_string_append_byte(zb_uint8_t *zcl_str,
 #define ZB_ZCL_ATTR_TYPE_IEEE_ADDR         0xf0U /*!< IEEE address (U64) type */
 #define ZB_ZCL_ATTR_TYPE_128_BIT_KEY       0xf1U /*!< 128-bit security key */
 
+/** Custom array of 16 elems data type */
+#define ZB_ZCL_ATTR_TYPE_CUSTOM_16ARRAY 0x49U
+
 /** Custom array of 32 elems data type (now is equal to ZB_ZCL_ATTR_TYPE_ARRAY) */
 #define ZB_ZCL_ATTR_TYPE_CUSTOM_32ARRAY 0x4aU
 
@@ -752,7 +760,7 @@ zb_zcl_attr_t;
 /** @brief ZCL 6.0: Default value for cluster revision global attribute,
  *  see @ref zcl_attr_global
  */
-#define ZB_ZCL_CLUSTER_REVISION_DEFAULT 1
+#define ZB_ZCL_CLUSTER_REVISION_DEFAULT 4
 
 /** @cond internals_doc */
 
@@ -966,6 +974,10 @@ zb_zcl_attr_t;
 /*! Get 32-bit unsigned attribute value (without any check) */
 #define ZB_ZCL_GET_ATTRIBUTE_VAL_S32(attr_desc)          \
   (*(zb_int32_t*)attr_desc->data_p)
+
+/*! Get 32-bit unsigned attribute value (without any check) */
+#define ZB_ZCL_GET_ATTRIBUTE_VAL_SINGLE(attr_desc)        \
+  (*(zb_single_t*)attr_desc->data_p)
 
 
 /*! @} */ /* General attributes' description */
@@ -1889,12 +1901,16 @@ zb_uint48_t zb_zcl_attr_get48(zb_uint8_t *value);
 #define ZB_ZCL_ATTR_GET24(value) zb_zcl_attr_get24(value)
 #define ZB_ZCL_ATTR_GET48(value) zb_zcl_attr_get48(value)
 
+zb_single_t zb_zcl_attr_getsingle(zb_uint8_t *value);
+#define ZB_ZCL_ATTR_GETSINGLE(value) zb_zcl_attr_getsingle(value)
+
 #else
 
 #define ZB_ZCL_ATTR_GET16(value) (*((zb_uint16_t *)value))
 #define ZB_ZCL_ATTR_GETS16(value) (*((zb_int16_t *)value))
 #define ZB_ZCL_ATTR_GET32(value) (*((zb_uint32_t *)value))
 #define ZB_ZCL_ATTR_GETS32(value) (*((zb_int32_t *)value))
+#define ZB_ZCL_ATTR_GETSINGLE(value) (*((zb_single_t *)value))
 
 #define ZB_ZCL_ATTR_GET24(value) (*((zb_int24_t *)value))
 #define ZB_ZCL_ATTR_GET48(value) (*((zb_uint48_t *)value))
@@ -1910,6 +1926,10 @@ zb_uint48_t zb_zcl_attr_get48(zb_uint8_t *value);
 /** @internal @brief Calculates byte array size (add 2 bytes for full length). */
 #define ZB_ZCL_ARRAY_GET_SIZE(ar, val) ZB_LETOH16(ar, val)
 #define ZB_ZCL_ARRAY_SET_SIZE(ar, val) ZB_HTOLE16_VAL(ar, val)
+
+/** @internal @brief Calculates 16-byte array size (add 2 bytes for full length). */
+#define ZB_BYTE_16ARRAY_GET_SIZE(ar, val) { ZB_ZCL_ARRAY_GET_SIZE(ar, val); *(zb_uint16_t*)(ar) *= 2U; }
+#define ZB_BYTE_16ARRAY_SET_SIZE(ar, val) { ZB_ZCL_ARRAY_SET_SIZE(ar, val); *(zb_uint16_t*)(ar) /= 2U; }
 
 /** @internal @brief Calculates 32-byte array size (add 2 bytes for full length). */
 #define ZB_BYTE_32ARRAY_GET_SIZE(ar, val) { ZB_ZCL_ARRAY_GET_SIZE(ar, val); *(zb_uint16_t*)(ar) *= 4U; }
@@ -2089,9 +2109,9 @@ void zb_zcl_set_attr_val_post_process_cluster_specific(zb_zcl_parsed_hdr_t *cmd_
  * @param attr_type - attribute type in question (see @ref zcl_attr_type)
  * @param attr_value - pointer to value in question (needed for variable sized types)
  *
- * @return size in bytes or 0xFF if type is invalid
+ * @return size in bytes or 0xFFFF if type is invalid
  */
-zb_uint8_t zb_zcl_get_attribute_size(zb_uint8_t attr_type, zb_uint8_t *attr_value);
+zb_uint16_t zb_zcl_get_attribute_size(zb_uint8_t attr_type, zb_uint8_t *attr_value);
 
 /**
  * @brief Get size of analog data type

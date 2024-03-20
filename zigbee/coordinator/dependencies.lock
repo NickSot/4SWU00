@@ -1,21 +1,33 @@
 dependencies:
+  espressif/esp-serial-flasher:
+    component_hash: dcc42a16712a1a636509cf0bf90e14032d7f2141784b533613b267b6aa318d52
+    source:
+      service_url: https://api.components.espressif.com/
+      type: service
+    version: 0.0.11
   espressif/esp-zboss-lib:
-    component_hash: eebfa1dce1c9efaf364e2b9df2c61dc7269963f58b1d753658ebe06508e0f812
+    component_hash: dad55dcf4e9e05892d75c833f621d0421b6b6657c5078fd9cfb2da9a496f9a91
     source:
       service_url: https://api.components.espressif.com/
       type: service
-    version: 0.7.2
+    version: 1.2.1
   espressif/esp-zigbee-lib:
-    component_hash: 334b27b6af02d5c275456b7608e74ed35d4a5036dfabc7828cf80cb070918418
+    component_hash: 3485a92e8eddeb47dc80ab14e771ea7ae70cdfe72ce1c11216c7df51e4774b2e
     source:
       service_url: https://api.components.espressif.com/
       type: service
-    version: 0.9.5
+    version: 1.2.1
+  espressif/esp_rcp_update:
+    component_hash: 5bd5e45c7bddcbef55b7180819b056ba69a92e16ae705548f61dc0402b6d7ec7
+    source:
+      service_url: https://api.components.espressif.com/
+      type: service
+    version: 0.3.1
   idf:
     component_hash: null
     source:
       type: idf
-    version: 5.2.0
-manifest_hash: cfff01c81d86bd57ca989fbef67152d7bb62b3fca6298e3735c18804bc801a59
+    version: 5.1.3
+manifest_hash: 09b8dd526e5fb2170527e1f76eb5ebb3d31c526858b244cdeeb01b96962ec613
 target: esp32c6
 version: 1.0.0

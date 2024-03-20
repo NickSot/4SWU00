@@ -155,6 +155,60 @@ esp_err_t esp_zb_secur_primary_network_key_get(uint8_t *key);
  */
 esp_err_t esp_zb_secur_network_key_set(uint8_t *key);
 
+/**
+ * @brief Get the minimum LQI values for device joining the network
+ *
+ * @return The minimum LQI values
+ */
+uint8_t esp_zb_secur_network_min_join_lqi_get(void);
+
+/**
+ * @brief Set the minimum LQI value for device joining the network
+ *
+ * @param[in] lqi The LQI values
+ */
+void esp_zb_secur_network_min_join_lqi_set(uint8_t lqi);
+
+/**
+ * @brief Add the specified pre-configured TC standard link key for the device
+ *
+ * @param[in] key A pointer to 16-byte pre-configured link key to be set
+ * @return
+ *      - ESP_OK: Preconfigured TC standard link key added successfully
+ *      - ESP_FAIL: Failed to add preconfigured TC standard link key
+ */
+esp_err_t esp_zb_secur_multi_TC_standard_preconfigure_key_add(uint8_t *key);
+
+/**
+ * @brief Remove the specified pre-configured TC standard link key from the device
+ *
+ * @param[in] key A pointer to 16-byte the pre-configured link key to be removed
+ * @return
+ *      - ESP_OK: Preconfigured TC standard link key removed successfully
+ *      - ESP_FAIL: Failed to remove preconfigured TC standard link key
+ */
+esp_err_t esp_zb_secur_multi_TC_standard_preconfigure_key_remove(uint8_t *key);
+
+/**
+ * @brief Add the specified pre-configured distributed link key for the device
+ *
+ * @param[in] key A pointer to 16-byte pre-configured distributed link key to be set
+ * @return
+ *      - ESP_OK: Preconfigured distributed link key added successfully
+ *      - ESP_FAIL: Failed to add preconfigured distributed link key
+ */
+esp_err_t esp_zb_secur_multi_standard_distributed_key_add(uint8_t *key);
+
+/**
+ * @brief Remove the specified pre-configured distributed link key from the device
+ *
+ * @param[in] key A pointer to 16-byte pre-configured distributed link key to be removed
+ * @return
+ *      - ESP_OK: Preconfigured distributed link key removed successfully
+ *      - ESP_FAIL: Failed to remove preconfigured distributed link key
+ */
+esp_err_t esp_zb_secur_multi_standard_distributed_key_remove(uint8_t *key);
+
 #ifdef __cplusplus
 }
 #endif

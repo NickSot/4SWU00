@@ -74,11 +74,13 @@
 #endif
 #endif
 
-#if defined ZB8051
-#define ZB_8BIT_WORD
-#elif defined ZB_PLATFORM_XAP5
-#define ZB_16BIT_WORD
-#else
+#if ((defined(ZB_8BIT_WORD) && defined(ZB_16BIT_WORD))          \
+     || (defined(ZB_8BIT_WORD) && defined(ZB_32BIT_WORD))       \
+     || (defined(ZB_16BIT_WORD) && defined(ZB_32BIT_WORD)))
+ZB_ASSERT_COMPILE_DECL(0);
+#endif
+
+#if !defined(ZB_8BIT_WORD) && !defined(ZB_16BIT_WORD) && !defined(ZB_32BIT_WORD)
 #define ZB_32BIT_WORD
 #endif
 
@@ -86,11 +88,7 @@
 #ifdef ZB_IAR
 #define ZB_XDATA
 #define ZB_CODE
-#ifdef ZB8051
-#define ZB_IAR_CODE  __code
-#else
 #define ZB_IAR_CODE
-#endif
 #elif defined __LINT__
 #define ZB_XDATA
 #define ZB_CODE
@@ -102,11 +100,7 @@
 #else
 #define ZB_XDATA
 #define ZB_CODE
-#ifdef ZB8051
-#define ZB_IAR_CODE code
-#else
 #define ZB_IAR_CODE
-#endif
 #endif
 
 /* register modifier for variables. Can be defined to "register". Will it help to the compiler? */
@@ -173,27 +167,8 @@ typedef signed char        zb_int8_t;
 typedef unsigned short     zb_uint16_t;
 
 typedef signed short       zb_int16_t;
-#if defined ZB8051
-typedef unsigned long      zb_uint32_t;
 
-typedef signed long        zb_int32_t;
-
-typedef zb_uint16_t        zb_bitfield_t;
-typedef zb_uint16_t        zb_lbitfield_t;
-
-typedef zb_int16_t         zb_sbitfield_t;
-
-typedef zb_uint16_t        zb_size_t;
-
-#ifdef ZB_CC25XX
-
-/* Warning: just for an alignment in the macsplit!
-   long long arithmetic won't work */
-typedef zb_uint32_t zb_uint64_t[2];
-
-#endif
-
-#elif defined ZB_16BIT_WORD
+#if defined ZB_16BIT_WORD
 
 typedef unsigned long      zb_uint32_t;
 
@@ -210,7 +185,7 @@ typedef zb_uint32_t        zb_size_t;
 typedef long long          zb_int64_t;
 typedef unsigned long long zb_uint64_t;
 
-#else /* defined ZB8051 */
+#else /* defined ZB_16BIT_WORD */
 /*
    project-local 4-byte unsigned int type
 */
@@ -243,7 +218,7 @@ typedef zb_uint32_t        zb_size_t;
 typedef long long          zb_int64_t;
 typedef unsigned long long zb_uint64_t;
 
-#endif /* defined ZB8051 */
+#endif /* defined ZB_16BIT_WORD */
 
 
 #else  /* ! defined  UNIX || ZB_WINDOWS */
@@ -429,6 +404,8 @@ typedef bool zb_bitbool_t;
 #define ZB_INT32_MAX       2147483647L
 #define ZB_UINT32_MIN      0UL
 #define ZB_UINT32_MAX      4294967295UL
+#define ZB_UINT64_MIN      0UL
+#define ZB_UINT64_MAX      UINT64_MAX
 
 #define ZB_UINT_MIN      0UL
 
@@ -489,7 +466,7 @@ typedef bool zb_bitbool_t;
 #endif
 
 /* IAR or Keil ARM CPU */
-#if (defined __IAR_SYSTEMS_ICC__ || defined __ARMCC_VERSION) && !defined ZB8051
+#if (defined __IAR_SYSTEMS_ICC__ || defined __ARMCC_VERSION)
 #define ZB_PACKED_PRE __packed
 #define ZB_WEAK_PRE __weak
 #else
@@ -503,7 +480,7 @@ typedef bool zb_bitbool_t;
 #define ZB_WEAK
 #endif
 
-#if (defined __ARMCC_VERSION) && !defined ZB8051
+#if (defined __ARMCC_VERSION)
 #define ZB_ALIGNED_PRE __attribute__((aligned))
 #endif
 
@@ -637,7 +614,7 @@ zb_addr_u;
 #define ZB_ASSERT_IF_NOT_ALIGNED(data_type,length)                \
   ZB_ASSERT_COMPILE_DECL(((sizeof(data_type) % (length)) == 0U))
 
-#define ZB_ASSERT_IF_NOT_ALIGNED_TO_4(data_type) ZB_ASSERT_IF_NOT_ALIGNED(data_type,4U)
+#define ZB_ASSERT_IF_NOT_ALIGNED_TO_16(data_type) ZB_ASSERT_IF_NOT_ALIGNED(data_type,16U)
 
 #define ZB_ASSERT_VALUE_ALIGNED(const_expr, length)               \
   ZB_ASSERT_COMPILE_DECL((((const_expr) % (length)) == 0U))
@@ -935,6 +912,9 @@ void* zb_put_next_2_htole32(zb_uint8_t *dst, zb_uint32_t val1, zb_uint32_t val2)
  *
  *    @typedef zb_bitbool_t
  *    @brief Type to be used for boolean bit fields inside structure.
+ *
+ *    @typedef zb_single_t
+ *    @brief Project-local single precision float type.
  *  @}
  */
 
@@ -1615,5 +1595,15 @@ typedef zb_uint32_t           zb_uint24_t;
 #endif /* ZB_UINT24_48_SUPPORT */
 
 /** @} */
+
+/**
+ * @addtogroup float_types
+ * @{
+ */
+
+typedef float zb_single_t;
+
+/** @} */
+
 
 #endif /* ZB_TYPES_H */

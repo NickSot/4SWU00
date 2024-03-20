@@ -40,6 +40,7 @@
 #ifndef ZB_CONFIG_COMMON_H
 #define ZB_CONFIG_COMMON_H 1
 
+#include "zb_config_platform.h"
 /*
 Note: that file included form the very beginning of zb_config.h
 Do not put there ifdefs depending on defines made in the middle of zb_config.h!
@@ -682,7 +683,7 @@ At the worst case our NWK can skip long address at tx: 8 bytes of reserve.
 *  Broadcast transaction record table size
 *  See Zigbee Specification subclause 3.6.5
 */
-#define ZB_NWK_BTR_TABLE_SIZE 16U
+#define ZB_NWK_BTR_TABLE_SIZE 90U
 #endif
 
 #ifndef ZB_NWK_BRR_TABLE_SIZE
@@ -839,11 +840,6 @@ nwkMaxBroadcastRetries
 */
 #define ZB_TC_REJOIN_ENABLE
 
- /*!
-   Define policy of ignoring assoc. permit and corresponding flags during rejoin
- */
-#define  ZB_REJOIN_IGNORES_FLAGS
-
 /*!
 Workaround for secure rejoin
 */
@@ -930,7 +926,7 @@ Workaround for secure rejoin
 /*!
    Default long poll interval
  */
-#define ZB_PIM_DEFAULT_LONG_POLL_INTERVAL (ZB_TIME_ONE_SECOND * 5U)
+#define ZB_PIM_DEFAULT_LONG_POLL_INTERVAL  ESP_ZB_PIM_DEFAULT_LONG_POLL_INTERVAL
 
 /*!
    Minimum long poll interval in quarterseconds
@@ -1046,7 +1042,7 @@ Workaround for secure rejoin
 *
 *  Table 2-154 of Zigbee Specification revision 22 : Config_NWK_Scan_Attempts default value is 5.
 */
-#define ZB_ZDO_NWK_SCAN_ATTEMPTS 5U
+#define ZB_ZDO_NWK_SCAN_ATTEMPTS 1U
 /** @cond internals_doc */
 /*! Delay for sending the end device request command. */
 #define ZB_ZDO_SEND_ED_TIMEOUT_REQ_DELAY ZB_MILLISECONDS_TO_BEACON_INTERVAL(100U)
@@ -1753,7 +1749,7 @@ request command frame.
 #define ZB_APS_MSG_MAX_SIZE 1536U
 #define ZB_ASDU_MAX_LEN_MULTIPLIER ((ZB_APS_MSG_MAX_SIZE + sizeof(zb_apsde_data_indication_t) + ZB_APS_HEADER_MAX_LEN)/ZB_IO_BUF_SIZE + 1U)
 #define ZB_ASDU_MAX_FRAG_LEN (ZB_ASDU_MAX_LEN_MULTIPLIER*ZB_IO_BUF_SIZE - sizeof(zb_apsde_data_indication_t) - ZB_APS_HEADER_MAX_LEN)
-#define ZB_APS_MAX_WINDOW_SIZE 1U
+#define ZB_APS_MAX_WINDOW_SIZE 8U
 #define ZB_APS_INTERFRAME_DELAY 50U /* milliseconds */
 
 #if defined(ZB_SE_ENABLE_SERVICE_DISCOVERY_PROCESSING)

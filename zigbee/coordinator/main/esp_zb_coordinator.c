@@ -36,11 +36,16 @@
  */
 
 #include "string.h"
+
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+
 #include "esp_log.h"
 #include "nvs_flash.h"
+
 #include "ha/esp_zigbee_ha_standard.h"
+#include "aps/esp_zigbee_aps.h"
+
 #include "esp_zb_coordinator.h"
 
 #if defined ZB_ED_ROLE
@@ -81,32 +86,35 @@ static void esp_zb_buttons_handler(switch_func_pair_t *button_func_pair)
         for (int i = 0; i < 18; i++) {
             beacon_data.receiver_MAC[i] = '1';
         }
-        
-        // beacon_data.receiver_MAC = "123412341234123412";
+
+        //strcpy(beacon_data.receiver_MAC, "11111111111111111");
+
+        ESP_EARLY_LOGI(TAG, "Struct Initialize");
+
         beacon_data.occupied = 0;
 
-        struct esp_zb_zcl_write_attr_cmd_s cmd_req;
-        struct esp_zb_zcl_attribute_s message;
-        struct esp_zb_zcl_attribute_data_s message_data;
+        uint8_t buffer[sizeof(BeaconData)];
 
-        message_data.type = ESP_ZB_ZCL_ATTR_TYPE_STRUCTURE;
-        message_data.size = sizeof(BeaconData) + 2;
-        message_data.value = (void *) &beacon_data;
+        memcpy(buffer, &beacon_data, sizeof(BeaconData));
 
-        message.id = (uint16_t) 1;
-        message.data = message_data;
+        esp_zb_apsde_data_req_t cmd_req;
 
-        cmd_req.zcl_basic_cmd.src_endpoint = HA_ONOFF_SWITCH_ENDPOINT;
-        cmd_req.address_mode = ESP_ZB_APS_ADDR_MODE_DST_ADDR_ENDP_NOT_PRESENT;
-        cmd_req.clusterID = 1;
-        // cmd_req.on_off_cmd_id = ESP_ZB_ZCL_CMD_ON_OFF_TOGGLE_ID;
-        cmd_req.attrVal = (uint8_t *) &message;
+        cmd_req.dst_addr_mode = ESP_ZB_APS_ADDR_MODE_16_ENDP_PRESENT;
+        cmd_req.dst_endpoint = 0xff;
+        cmd_req.asdu_length = sizeof(buffer);
+        cmd_req.asdu = buffer;
+        cmd_req.cluster_id = 1;
+        cmd_req.profile_id = 1;
+        // cmd_req.dst_short_addr = 0xc1a4;
+        cmd_req.dst_short_addr = 0xffff;
+        cmd_req.use_alias = false;
+        cmd_req.radius = 0x5;
+        cmd_req.src_endpoint = esp_zb_get_short_address();
+        cmd_req.tx_options = ESP_ZB_APSDE_TX_OPT_NO_LONG_ADDR;
 
-        // ESP_EARLY_LOGI(TAG, "Send 'on_off toggle' command");
-        // esp_zb_zcl_on_off_cmd_req(&cmd_req);
+        ESP_EARLY_LOGI(TAG, "Send serialized composite data structure");
 
-        // send a custom dummy message command
-        esp_zb_zcl_write_attr_cmd_req(&cmd_req);
+        esp_zb_aps_data_request(&cmd_req);
     }
 }
 
@@ -208,9 +216,14 @@ static void esp_zb_task(void *pvParameters)
     /* initialize Zigbee stack */
     esp_zb_cfg_t zb_nwk_cfg = ESP_ZB_ZC_CONFIG();
     esp_zb_init(&zb_nwk_cfg);
-    esp_zb_on_off_switch_cfg_t switch_cfg = ESP_ZB_DEFAULT_ON_OFF_SWITCH_CONFIG();
-    esp_zb_ep_list_t *esp_zb_on_off_switch_ep = esp_zb_on_off_switch_ep_create(HA_ONOFF_SWITCH_ENDPOINT, &switch_cfg);
+    
+    // esp_zb_on_off_switch_cfg_t switch_cfg = ESP_ZB_DEFAULT_ON_OFF_SWITCH_CONFIG();
+    // esp_zb_ep_list_t *esp_zb_on_off_switch_ep = esp_zb_on_off_switch_ep_create(HA_ONOFF_SWITCH_ENDPOINT, &switch_cfg);
+    // esp_zb_device_register(esp_zb_on_off_switch_ep);
+    
+    esp_zb_ep_list_t * esp_zb_on_off_switch_ep = esp_zb_ep_list_create();
     esp_zb_device_register(esp_zb_on_off_switch_ep);
+    
     esp_zb_set_primary_network_channel_set(ESP_ZB_PRIMARY_CHANNEL_MASK);
     ESP_ERROR_CHECK(esp_zb_start(false));
     esp_zb_main_loop_iteration();

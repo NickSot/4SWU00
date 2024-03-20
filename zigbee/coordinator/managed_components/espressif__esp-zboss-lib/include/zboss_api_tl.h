@@ -58,7 +58,7 @@
  */
 
 /** Controls number of device info record stored in Touchlink transaction context. */
-#define ZB_ZLL_TRANS_CTX_DEV_INFO_MAX_NUMBER 4U
+#define ZB_ZLL_TRANS_CTX_DEV_INFO_MAX_NUMBER 8U
 
 /** Controls number of endpoint descriptions stored in Touchlink transaction context. */
 #define ZB_ZLL_TRANS_CTX_EP_INFO_MAX_NUMBER 6U
@@ -110,6 +110,7 @@ typedef struct zb_zll_ext_device_info_s
   zb_uint8_t sub_device_count;
   zb_uint8_t total_group_id_count;
   zb_uint8_t ep_info_idx;
+  zb_int8_t rssi;
 } zb_zll_ext_device_info_t;
 
 /**
@@ -169,7 +170,7 @@ typedef union zb_zll_command_target_data_u
  *  @param action [IN] - action to check.
  *  @returns ZB_TRUE if action allowed, ZB_FALSE otherwise.
  */
-typedef zb_uint8_t (*zb_zll_is_action_allowed_cb_t)(zb_uint8_t action);
+typedef zb_bool_t (*zb_zll_is_action_allowed_cb_t)(zb_uint8_t action);
 
 /** Touchlink device info data */
 typedef struct zb_zll_device_info_s
@@ -198,6 +199,7 @@ typedef struct zb_zll_device_info_s
   zb_uint8_t nwk_channel;       /* Logical channel number for start/join the network (as initiator
                                  * role) */
   zb_int8_t rssi_threshold;     /* RSSI threshold */
+  zb_uint32_t target_timeout;   /* Timeout for target to wait initiator */
 }
 zb_zll_device_info_t;
 
@@ -235,7 +237,7 @@ typedef struct zb_zll_transaction_ctx_s
   /** Number of filled endpoint info records. */
   zb_uint8_t n_ep_infos;
   /** Sub-device (endpoint) info table. */
-  zb_zll_sub_device_info_t ep_infos[ZB_ZLL_TRANS_CTX_EP_INFO_MAX_NUMBER];
+  zb_zll_sub_device_info_t ep_infos[ZB_ZLL_TRANS_CTX_DEV_INFO_MAX_NUMBER * ZB_ZLL_TRANS_CTX_EP_INFO_MAX_NUMBER];
 
   /** @brief User-provided "check action allowed" callback. */
   zb_zll_is_action_allowed_cb_t check_action_allowed;

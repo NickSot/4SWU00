@@ -38,14 +38,12 @@
 #pragma once
 
 #include "sdkconfig.h"
+#include "hal/gpio_types.h"
 #include "hal/uart_types.h"
 #include "driver/uart.h"
 
 #define ZB_ESP
 #define ZB_CONFIG_ESP
-#if CONFIG_ZB_RADIO_MACSPLIT_UART
-#define ZB_PLATFORM_SOC
-#endif
 
 #define ZB_LEDS_MASK
 #define ZB_USE_BUTTONS
@@ -98,8 +96,8 @@ typedef enum {
 typedef struct {
     uart_port_t port;               /*!< UART port number */
     uart_config_t uart_config;      /*!< UART configuration, see uart_config_t docs */
-    int rx_pin;                     /*!< UART RX pin */
-    int tx_pin;                     /*!< UART TX pin */
+    gpio_num_t rx_pin;              /*!< UART RX pin */
+    gpio_num_t tx_pin;              /*!< UART TX pin */
 } esp_zb_uart_config_t;
 
 typedef struct {
@@ -157,4 +155,31 @@ void esp_zb_macsplit_host_reset_rcp();
 
 void esp_zb_add_rcp_failure_cb(esp_rcp_failure_callback_t cb);
 
-void esp_zb_macsplit_uart_deinit();
+/**
+ * @brief  Deinitilaize the RCP
+ *
+ * @return - ESP_OK on success
+ *
+ */
+esp_err_t esp_zb_rcp_deinit(void);
+
+/**
+ * @brief  Set zigbee default long poll interval
+ *
+ * @note  Used internally by the Zigbee SDK, no user intervention is required.
+ *
+ * @param[in] milliseconds - default long_poll_interval
+ */
+void esp_zb_set_default_long_poll_interval(uint32_t milliseconds);
+
+/**
+ * @brief  Get the zigbee default long poll interval
+ *
+ * @note  Used internally by the Zigbee SDK, no user intervention is required.
+ *
+ * @return zigbee default long poll interval
+ *
+ */
+uint32_t esp_zb_get_default_long_poll_interval(void);
+
+#define ESP_ZB_PIM_DEFAULT_LONG_POLL_INTERVAL  esp_zb_get_default_long_poll_interval()

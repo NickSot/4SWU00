@@ -31,6 +31,19 @@ extern "C" {
 #include "esp_zigbee_zcl_pressure_meas.h"
 #include "esp_zigbee_zcl_occupancy_sensing.h"
 #include "esp_zigbee_zcl_window_covering.h"
+#include "esp_zigbee_zcl_thermostat.h"
+#include "esp_zigbee_zcl_fan_control.h"
+#include "esp_zigbee_zcl_thermostat_ui_config.h"
+#include "esp_zigbee_zcl_analog_input.h"
+#include "esp_zigbee_zcl_analog_output.h"
+#include "esp_zigbee_zcl_analog_value.h"
+#include "esp_zigbee_zcl_carbon_dioxide_measurement.h"
+#include "esp_zigbee_zcl_pm2_5_measurement.h"
+#include "esp_zigbee_zcl_multistate_value.h"
+#include "esp_zigbee_zcl_metering.h"
+#ifdef ZB_ENABLE_ZGP
+#include "esp_zigbee_zcl_green_power.h"
+#endif
 
 /**
  * @brief Application Framework Profile identifiers.
@@ -43,6 +56,8 @@ typedef enum {
     ESP_ZB_AF_GP_PROFILE_ID     = 0xA1E0U,  /** GreenPower profile ID */
 } esp_zb_af_profile_id_t;
 
+/** Green power special endpoint */
+#define ESP_ZGP_ENDPOINT 242
 /** Non manufacturer specific code for certain attribute */
 #define ESP_ZB_ZCL_ATTR_NON_MANUFACTURER_SPECIFIC 0xFFFFU
 /** Non manufacturer specific code for certain cluster */
@@ -140,13 +155,16 @@ typedef enum {
     ESP_ZB_ZCL_CLUSTER_ID_THERMOSTAT_UI_CONFIG  = 0x0204U,          /*!< Thermostat user interface configuration cluster identifier. */
     ESP_ZB_ZCL_CLUSTER_ID_COLOR_CONTROL         = 0x0300U,          /*!< Color control cluster identifier. */
     ESP_ZB_ZCL_CLUSTER_ID_BALLAST_CONFIG        = 0x0301U,          /*!< Ballast configuration cluster identifier. */
-    ESP_ZB_ZCL_CLUSTER_ID_ILLUMINANCE_MEASUREMENT  = 0x0400U,       /*!< Illuminance measurement */
-    ESP_ZB_ZCL_CLUSTER_ID_TEMP_MEASUREMENT         = 0x0402U,       /*!< Temperature measurement */
-    ESP_ZB_ZCL_CLUSTER_ID_PRESSURE_MEASUREMENT     = 0x0403U,       /*!< Pressure measurement */
-    ESP_ZB_ZCL_CLUSTER_ID_REL_HUMIDITY_MEASUREMENT = 0x0405U,       /*!< Relative humidity measurement */
-    ESP_ZB_ZCL_CLUSTER_ID_OCCUPANCY_SENSING        = 0x0406U,       /*!< Occupancy sensing */
-    ESP_ZB_ZCL_CLUSTER_ID_IAS_ZONE                 = 0x0500U,       /*!< IAS zone */
-    ESP_ZB_ZCL_CLUSTER_ID_ELECTRICAL_MEASUREMENT   = 0x0b04U,       /*!< Electrical measurement */
+    ESP_ZB_ZCL_CLUSTER_ID_ILLUMINANCE_MEASUREMENT    = 0x0400U,     /*!< Illuminance measurement */
+    ESP_ZB_ZCL_CLUSTER_ID_TEMP_MEASUREMENT           = 0x0402U,     /*!< Temperature measurement */
+    ESP_ZB_ZCL_CLUSTER_ID_PRESSURE_MEASUREMENT       = 0x0403U,     /*!< Pressure measurement */
+    ESP_ZB_ZCL_CLUSTER_ID_REL_HUMIDITY_MEASUREMENT   = 0x0405U,     /*!< Relative humidity measurement */
+    ESP_ZB_ZCL_CLUSTER_ID_OCCUPANCY_SENSING          = 0x0406U,     /*!< Occupancy sensing */
+    ESP_ZB_ZCL_CLUSTER_ID_CARBON_DIOXIDE_MEASUREMENT = 0x040dU,     /*!< Carbon dioxide measurement */
+    ESP_ZB_ZCL_CLUSTER_ID_PM2_5_MEASUREMENT          = 0x042aU,     /*!< PM2.5 measurement */
+    ESP_ZB_ZCL_CLUSTER_ID_IAS_ZONE                   = 0x0500U,     /*!< IAS zone */
+    ESP_ZB_ZCL_CLUSTER_ID_ELECTRICAL_MEASUREMENT     = 0x0b04U,     /*!< Electrical measurement */
+    ESP_ZB_ZCL_CLUSTER_ID_METERING                   = 0x0702U,     /*!< Metering */
 } esp_zb_zcl_cluster_id_t;
 
 /**
@@ -236,7 +254,9 @@ typedef enum {
     ESP_ZB_ZCL_ATTR_TYPE_CHAR_STRING        = 0x42U,        /*!< Character string (array) data type */
     ESP_ZB_ZCL_ATTR_TYPE_LONG_OCTET_STRING  = 0x43U,        /*!< Long octet string */
     ESP_ZB_ZCL_ATTR_TYPE_LONG_CHAR_STRING   = 0x44U,        /*!< Long character string */
-    ESP_ZB_ZCL_ATTR_TYPE_ARRAY              = 0x48U,        /*!< Array data type 2 + sum of content len */
+    ESP_ZB_ZCL_ATTR_TYPE_ARRAY              = 0x48U,        /*!< Array data with 8bit type, size = 2 + sum of content len */
+    ESP_ZB_ZCL_ATTR_TYPE_16BIT_ARRAY        = 0x49U,        /*!< Array data with 16bit type, size = 2 + sum of content len */
+    ESP_ZB_ZCL_ATTR_TYPE_32BIT_ARRAY        = 0x4aU,        /*!< Array data with 32bit type, size = 2 + sum of content len */
     ESP_ZB_ZCL_ATTR_TYPE_STRUCTURE          = 0x4cU,        /*!< Structure data type 2 + sum of content len */
     ESP_ZB_ZCL_ATTR_TYPE_SET                = 0x50U,        /*!< Collection:set, size = sum of len of content */
     ESP_ZB_ZCL_ATTR_TYPE_BAG                = 0x51U,        /*!< Collection:bag, size = sum of len of content */
@@ -266,6 +286,62 @@ typedef enum {
     ESP_ZB_ZCL_ATTR_ACCESS_INTERNAL   = 0x40U,   /*!< Internal access only Attribute */
 } esp_zb_zcl_attr_access_t;
 
+/**
+ * @brief The ZCL attribute location information struct
+ *
+ */
+typedef struct esp_zb_zcl_attr_location_info_s {
+    uint8_t endpoint_id;                    /*!< The endpoint identifier on which the cluster id is resident. */
+    uint16_t cluster_id;                    /*!< The cluster identifier on which the attribute is resident, refer to esp_zb_zcl_cluster_id_t */
+    uint8_t cluster_role;                   /*!< The role of cluster, refer to esp_zb_zcl_cluster_role_t */
+    uint16_t manuf_code;                    /*!< The manufacturer code of attribute */
+    uint16_t attr_id;                       /*!< The attribute identifier */
+} esp_zb_zcl_attr_location_info_t;
+
+/**
+ * @brief ZCL Cluster Check Attribute Value Handler, which should be called before attribute change and checks if new value is in correct range
+ *        and can be applied.
+ *
+ * @param[in] attr_id  ZCL Attribute ID
+ * @param[in] endpoint Device endpoint
+ * @param[in] value    Pointer to the new Attribute Value
+ *
+ * @return The result of check value whose value refer to esp_err_t
+ */
+typedef signed int (*esp_zb_zcl_cluster_check_value_callback_t)(uint16_t attr_id, uint8_t endpoint, uint8_t *value);
+
+/**
+ * @brief ZCL Cluster Write Attribute Handler, which should be called before attribute change (if any cluster-specific action needs to
+ *        be bound to attribute change, it can be placed in this handler).
+ *
+ * @param[in] endpoint   Device endpoint
+ * @param[in] attr_id    ZCL Attribute ID
+ * @param[in] new_value  Pointer to the new Attribute Value
+ * @param[in] manuf_code Manufacturer specific code
+ */
+typedef void (*esp_zb_zcl_cluster_write_attr_callback_t)(uint8_t endpoint, uint16_t attr_id, uint8_t *new_value, uint16_t manuf_code);
+
+/**
+ * @brief Get the size of ZCL attribute value
+ *
+ * @param[in] attr_type  The data type of attribute value
+ * @param[in] attr_value The value of attribute
+ * @return
+ *      - 0x00 - 0xFFFE: The size of attribute value
+ *      - 0xFFFF: Invalid size
+ */
+uint16_t esp_zb_zcl_get_attribute_size(uint8_t attr_type, uint8_t *attr_value);
+
+/**
+ * @brief Put the ZCL attribute value to specific memory
+ *
+ * @param data_ptr      A pointer of specific memory
+ * @param type          The data type of attribute value
+ * @param value         The value of attribute
+ * @param value_size    The size of attribute value
+ * @return              A pointer indicates the end location in specific memory after a value has been stored
+ */
+uint8_t *esp_zb_zcl_put_attribute_value(uint8_t *data_ptr, uint8_t type, uint8_t *value, uint16_t value_size);
 #ifdef __cplusplus
 }
 #endif
