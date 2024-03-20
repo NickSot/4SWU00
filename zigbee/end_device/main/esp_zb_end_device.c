@@ -53,6 +53,8 @@
 
 static const char *TAG = "ESP_ZB_ON_OFF_LIGHT";
 
+BeaconHashTable ht;
+
 esp_zb_apsde_data_req_t serialize_beacon_data(BeaconData * beacon_data_ptr) {
     uint8_t buffer[sizeof(BeaconData)];
 
@@ -80,7 +82,7 @@ esp_zb_apsde_data_req_t serialize_beacon_data(BeaconData * beacon_data_ptr) {
 
 void process_beacon_data(BeaconData data) {
     // update the hashtable
-    insert_beacon(&ht, beacon_data);
+    insert_beacon(&ht, data);
 }
 
 BeaconData deserialize_beacon_data(u_int8_t * buffer) {
