@@ -43,7 +43,6 @@
 #include "esp_log.h"
 #include "nvs_flash.h"
 
-#include "ha/esp_zigbee_ha_standard.h"
 #include "aps/esp_zigbee_aps.h"
 
 #include "esp_zb_coordinator.h"
@@ -51,70 +50,78 @@
 #if defined ZB_ED_ROLE
 #error Define ZB_COORDINATOR_ROLE in idf.py menuconfig to compile light switch source code.
 #endif
+
+static const char *TAG = "ESP_COORDINATOR";
+
 typedef struct light_bulb_device_params_s {
     esp_zb_ieee_addr_t ieee_addr;
     uint8_t  endpoint;
     uint16_t short_addr;
 } light_bulb_device_params_t;
 
+static esp_zb_apsde_data_req_t serialize_beacon_data(BeaconData * beacon_data_ptr) {
+    uint8_t buffer[sizeof(BeaconData)];
+
+    memcpy(buffer, beacon_data_ptr, sizeof(BeaconData));
+
+    esp_zb_apsde_data_req_t cmd_req;
+
+    // cmd_req.dst_addr_mode = ;
+    cmd_req.dst_endpoint = 0xff;
+    
+    cmd_req.asdu_length = sizeof(buffer);
+    cmd_req.asdu = buffer;
+    
+    cmd_req.cluster_id = 1;
+    cmd_req.profile_id = 1;
+    cmd_req.dst_addr_mode = ESP_ZB_APS_ADDR_MODE_16_ENDP_PRESENT;
+    
+    cmd_req.dst_short_addr = 0xffff;
+    cmd_req.use_alias = false;
+    cmd_req.radius = 0x5;
+    cmd_req.src_endpoint = esp_zb_get_short_address();
+    cmd_req.tx_options = ESP_ZB_APSDE_TX_OPT_NO_LONG_ADDR;
+
+    ESP_EARLY_LOGI(TAG, "Send serialized composite data structure");
+
+    return cmd_req;
+}
+
+void process_beacon_data(BeaconData beacon_data) {
+    // update the hashtable
+}
+
+BeaconData deserialize_beacon_data(u_int8_t * buffer) {
+    BeaconData beacon_data;
+    memcpy(&beacon_data, buffer, sizeof(BeaconData));
+
+    process_beacon_data(beacon_data);
+
+    return beacon_data;
+}
+
 static switch_func_pair_t button_func_pair[] = {
     {GPIO_INPUT_IO_TOGGLE_SWITCH, SWITCH_ONOFF_TOGGLE_CONTROL}
 };
-
-static const char *TAG = "ESP_ZB_ON_OFF_SWITCH";
-
-// typedef struct {
-//     char uuid[UUID_LENGTH];
-//     int signal_strength;
-//     unsigned long last_pinged;
-//     char receiver_MAC[18]; // MAC Address string length
-//     int occupied;
-// } BeaconData;
 
 static void esp_zb_buttons_handler(switch_func_pair_t *button_func_pair)
 {
     if (button_func_pair->func == SWITCH_ONOFF_TOGGLE_CONTROL) {
         BeaconData beacon_data;
 
-        for (int i = 0; i < UUID_LENGTH; i++) {
-            beacon_data.uuid[i] = '1';
-        }
+        strcpy(beacon_data.uuid, "111111111111");
 
         beacon_data.signal_strength = 4;
         beacon_data.last_pinged = 144;
+
+        strcpy(beacon_data.receiver_MAC, "11111111111111111");
+
+        esp_zb_apsde_data_req_t cmd_req = serialize_beacon_data(&beacon_data);
         
-        for (int i = 0; i < 18; i++) {
-            beacon_data.receiver_MAC[i] = '1';
-        }
-
-        //strcpy(beacon_data.receiver_MAC, "11111111111111111");
-
-        ESP_EARLY_LOGI(TAG, "Struct Initialize");
+        // dispatch byte array to all receivers
+        esp_zb_aps_data_request(&cmd_req);
 
         beacon_data.occupied = 0;
-
-        uint8_t buffer[sizeof(BeaconData)];
-
-        memcpy(buffer, &beacon_data, sizeof(BeaconData));
-
-        esp_zb_apsde_data_req_t cmd_req;
-
-        cmd_req.dst_addr_mode = ESP_ZB_APS_ADDR_MODE_16_ENDP_PRESENT;
-        cmd_req.dst_endpoint = 0xff;
-        cmd_req.asdu_length = sizeof(buffer);
-        cmd_req.asdu = buffer;
-        cmd_req.cluster_id = 1;
-        cmd_req.profile_id = 1;
-        // cmd_req.dst_short_addr = 0xc1a4;
-        cmd_req.dst_short_addr = 0xffff;
-        cmd_req.use_alias = false;
-        cmd_req.radius = 0x5;
-        cmd_req.src_endpoint = esp_zb_get_short_address();
-        cmd_req.tx_options = ESP_ZB_APSDE_TX_OPT_NO_LONG_ADDR;
-
-        ESP_EARLY_LOGI(TAG, "Send serialized composite data structure");
-
-        esp_zb_aps_data_request(&cmd_req);
     }
 }
 

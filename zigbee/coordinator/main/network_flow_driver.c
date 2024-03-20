@@ -36,10 +36,13 @@
  */
 
 #include "esp_log.h"
+
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/queue.h"
+
 #include "network_flow_driver.h"
+#include "string.h"
 
 /**
  * @brief:
@@ -173,6 +176,7 @@ bool switch_driver_init(switch_func_pair_t *button_func_pair, uint8_t button_num
     if (!switch_driver_gpio_init(button_func_pair, button_num)) {
         return false;
     }
+    
     func_ptr = cb;
     return true;
 }

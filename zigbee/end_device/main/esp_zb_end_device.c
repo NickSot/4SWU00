@@ -44,7 +44,6 @@
 #include "esp_log.h"
 #include "nvs_flash.h"
 
-#include "ha/esp_zigbee_ha_standard.h"
 #include "aps/esp_zigbee_aps.h"
 #include "esp_zb_end_device.h"
 
@@ -53,6 +52,45 @@
 #endif
 
 static const char *TAG = "ESP_ZB_ON_OFF_LIGHT";
+
+esp_zb_apsde_data_req_t serialize_beacon_data(BeaconData * beacon_data_ptr) {
+    uint8_t buffer[sizeof(BeaconData)];
+
+    memcpy(buffer, beacon_data_ptr, sizeof(BeaconData));
+
+    esp_zb_apsde_data_req_t cmd_req;
+
+    cmd_req.dst_addr_mode = ESP_ZB_APS_ADDR_MODE_16_ENDP_PRESENT;
+    cmd_req.dst_endpoint = 0xff;
+    cmd_req.asdu_length = sizeof(buffer);
+    cmd_req.asdu = buffer;
+    cmd_req.cluster_id = 1;
+    cmd_req.profile_id = 1;
+    
+    cmd_req.dst_short_addr = 0xffff;
+    cmd_req.use_alias = false;
+    cmd_req.radius = 0x5;
+    cmd_req.src_endpoint = esp_zb_get_short_address();
+    cmd_req.tx_options = ESP_ZB_APSDE_TX_OPT_NO_LONG_ADDR;
+
+    ESP_EARLY_LOGI(TAG, "Send serialized composite data structure");
+
+    return cmd_req;
+}
+
+void process_beacon_data(BeaconData data) {
+
+}
+
+BeaconData deserialize_beacon_data(u_int8_t * buffer) {
+    BeaconData beacon_data;
+    memcpy(&beacon_data, buffer, sizeof(BeaconData));
+
+    process_beacon_data(beacon_data);
+
+    return beacon_data;
+}
+
 /********************* Define functions **************************/
 static void bdb_start_top_level_commissioning_cb(uint8_t mode_mask)
 {
@@ -101,62 +139,35 @@ void esp_zb_app_signal_handler(esp_zb_app_signal_t *signal_struct)
 
 static esp_err_t zb_attribute_handler(esp_zb_apsde_data_confirm_t * confirm)
 {
-    esp_err_t ret = ESP_OK;
-
-    bool light_state = 0;
-
-    // ESP_RETURN_ON_FALSE(confirm, ESP_FAIL, TAG, "Empty message");
-    // ESP_RETURN_ON_FALSE(message->info.status == ESP_ZB_ZCL_STATUS_SUCCESS, ESP_ERR_INVALID_ARG, TAG,
-    //                     "Received message: error status(%d)", message->info.status);
     ESP_LOGI(TAG, "Received message: endpoint(%d), data size(%d)",
             (int)confirm->src_endpoint, (int)confirm->asdu_length);
-            
-    BeaconData beacon_data;
-    memcpy(&beacon_data, confirm->asdu, sizeof(BeaconData));
+    
+    BeaconData data = deserialize_beacon_data(confirm->asdu);
 
-    // light_state = beacon_data.occupied;
+    ESP_LOGI(TAG, "receiver MAC address: %s", data.receiver_MAC);
+    ESP_LOGI(TAG, "beacon UUID: %s", data.uuid);
+    ESP_LOGI(TAG, "receiver signal strength: %d", data.signal_strength);
 
-    // light_state = message->attribute.data.value ? *(bool *)message->attribute.data.value : light_state;
-    // ESP_LOGI(TAG, "Light sets to %s", light_state ? "On" : "Off");
-    ESP_LOGI(TAG, "receiver MAC address: %s", beacon_data.receiver_MAC);
-    ESP_LOGI(TAG, "receiver signal strength: %d", beacon_data.signal_strength);
-
-    // light_driver_set_power(light_state);
-
-    return ret;
+    return ESP_OK;
 }
 
 static esp_err_t zb_attribute_ind_handler(esp_zb_apsde_data_ind_t * confirm)
 {
-    esp_err_t ret = ESP_OK;
 
-    bool light_state = 0;
-
-    // ESP_RETURN_ON_FALSE(confirm, ESP_FAIL, TAG, "Empty message");
-    // ESP_RETURN_ON_FALSE(message->info.status == ESP_ZB_ZCL_STATUS_SUCCESS, ESP_ERR_INVALID_ARG, TAG,
-    //                     "Received message: error status(%d)", message->info.status);
     ESP_LOGI(TAG, "Received message: endpoint(%d), data size(%d)",
             (int)confirm->src_endpoint, (int)confirm->asdu_length);
-            
-    BeaconData beacon_data;
-    memcpy(&beacon_data, confirm->asdu, sizeof(BeaconData));
+    
+    BeaconData data = deserialize_beacon_data(confirm->asdu);
 
-    // light_state = beacon_data.occupied;
+    ESP_LOGI(TAG, "receiver MAC address: %s", data.receiver_MAC);
+    ESP_LOGI(TAG, "beacon UUID: %s", data.uuid);
+    ESP_LOGI(TAG, "receiver signal strength: %d", data.signal_strength);
 
-    // light_state = message->attribute.data.value ? *(bool *)message->attribute.data.value : light_state;
-    // ESP_LOGI(TAG, "Light sets to %s", light_state ? "On" : "Off");
-    ESP_LOGI(TAG, "receiver MAC address: %s", beacon_data.receiver_MAC);
-    ESP_LOGI(TAG, "receiver signal strength: %d", beacon_data.signal_strength);
-
-    // light_driver_set_power(light_state);
-
-    return ret;
+    return ESP_OK;
 }
 
 static void zb_action_handler(esp_zb_apsde_data_confirm_t confirm)
 {
-    // esp_err_t ret = confirm.status;
-
     switch (confirm.status) {
         case ESP_OK:
             // ret = zb_attribute_handler(&confirm);
@@ -166,8 +177,6 @@ static void zb_action_handler(esp_zb_apsde_data_confirm_t confirm)
             ESP_LOGW(TAG, "Receive Zigbee action(0x%d) callback", confirm.status);
             break;
     }
-    
-    // return ret;
 }
 
 static bool zb_action_handler_ind(esp_zb_apsde_data_ind_t ind)

@@ -1741,14 +1741,6 @@ CONFIG_WIFI_PROV_STA_ALL_CHANNEL_SCAN=y
 # end of Wi-Fi Provisioning Manager
 
 #
-# ESP serial flasher
-#
-CONFIG_SERIAL_FLASHER_MD5_ENABLED=y
-CONFIG_SERIAL_FLASHER_RESET_HOLD_TIME_MS=100
-CONFIG_SERIAL_FLASHER_BOOT_HOLD_TIME_MS=50
-# end of ESP serial flasher
-
-#
 # Zigbee
 #
 CONFIG_ZB_ENABLED=y
@@ -1771,6 +1763,14 @@ CONFIG_ZB_GP_ENABLED=y
 # CONFIG_ESP_ZB_TRACE_ENABLE is not set
 # end of Zigbee trace log option
 # end of Zigbee
+
+#
+# ESP serial flasher
+#
+CONFIG_SERIAL_FLASHER_MD5_ENABLED=y
+CONFIG_SERIAL_FLASHER_RESET_HOLD_TIME_MS=100
+CONFIG_SERIAL_FLASHER_BOOT_HOLD_TIME_MS=50
+# end of ESP serial flasher
 # end of Component config
 
 # CONFIG_IDF_EXPERIMENTAL_FEATURES is not set
