@@ -53,6 +53,9 @@
 
 static const char *TAG = "ESP_COORDINATOR";
 
+// hash table storage
+BeaconHashTable ht;
+
 typedef struct light_bulb_device_params_s {
     esp_zb_ieee_addr_t ieee_addr;
     uint8_t  endpoint;
@@ -66,7 +69,7 @@ static esp_zb_apsde_data_req_t serialize_beacon_data(BeaconData * beacon_data_pt
 
     esp_zb_apsde_data_req_t cmd_req;
 
-    // cmd_req.dst_addr_mode = ;
+    cmd_req.dst_addr_mode = ESP_ZB_APS_ADDR_MODE_16_ENDP_PRESENT;
     cmd_req.dst_endpoint = 0xff;
     
     cmd_req.asdu_length = sizeof(buffer);
@@ -74,8 +77,7 @@ static esp_zb_apsde_data_req_t serialize_beacon_data(BeaconData * beacon_data_pt
     
     cmd_req.cluster_id = 1;
     cmd_req.profile_id = 1;
-    cmd_req.dst_addr_mode = ESP_ZB_APS_ADDR_MODE_16_ENDP_PRESENT;
-    
+
     cmd_req.dst_short_addr = 0xffff;
     cmd_req.use_alias = false;
     cmd_req.radius = 0x5;
@@ -89,6 +91,7 @@ static esp_zb_apsde_data_req_t serialize_beacon_data(BeaconData * beacon_data_pt
 
 void process_beacon_data(BeaconData beacon_data) {
     // update the hashtable
+    insert_beacon(&ht, beacon_data);
 }
 
 BeaconData deserialize_beacon_data(u_int8_t * buffer) {
@@ -107,6 +110,8 @@ static switch_func_pair_t button_func_pair[] = {
 static void esp_zb_buttons_handler(switch_func_pair_t *button_func_pair)
 {
     if (button_func_pair->func == SWITCH_ONOFF_TOGGLE_CONTROL) {
+        // TODO: merge with Bluetooth
+
         BeaconData beacon_data;
 
         strcpy(beacon_data.uuid, "111111111111");
@@ -242,6 +247,10 @@ void app_main(void)
         .radio_config = ESP_ZB_DEFAULT_RADIO_CONFIG(),
         .host_config = ESP_ZB_DEFAULT_HOST_CONFIG(),
     };
+
+    // initialize the hash table
+    init_hashtable(&ht);
+    
     ESP_ERROR_CHECK(nvs_flash_init());
     ESP_ERROR_CHECK(esp_zb_platform_config(&config));
     switch_driver_init(button_func_pair, PAIR_SIZE(button_func_pair), esp_zb_buttons_handler);
