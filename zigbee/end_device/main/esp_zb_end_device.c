@@ -79,7 +79,8 @@ esp_zb_apsde_data_req_t serialize_beacon_data(BeaconData * beacon_data_ptr) {
 }
 
 void process_beacon_data(BeaconData data) {
-
+    // update the hashtable
+    insert_beacon(&ht, beacon_data);
 }
 
 BeaconData deserialize_beacon_data(u_int8_t * buffer) {
@@ -203,11 +204,10 @@ static void esp_zb_task(void *pvParameters)
     /* initialize Zigbee stack */
     esp_zb_cfg_t zb_nwk_cfg = ESP_ZB_ZED_CONFIG();
     esp_zb_init(&zb_nwk_cfg);
-    // esp_zb_on_off_light_cfg_t light_cfg = ESP_ZB_DEFAULT_ON_OFF_LIGHT_CONFIG();
-    // esp_zb_ep_list_t *esp_zb_on_off_light_ep = esp_zb_on_off_light_ep_create(HA_ESP_LIGHT_ENDPOINT, &light_cfg);
+    
     esp_zb_ep_list_t *esp_zb_on_off_light_ep = esp_zb_ep_list_create();
     esp_zb_device_register(esp_zb_on_off_light_ep);
-    // esp_zb_core_action_handler_register(zb_action_handler);
+    
     esp_zb_aps_data_confirm_handler_register(zb_action_handler);
     esp_zb_aps_data_indication_handler_register(zb_action_handler_ind);
     esp_zb_set_primary_network_channel_set(ESP_ZB_PRIMARY_CHANNEL_MASK);
@@ -221,8 +221,12 @@ void app_main(void)
         .radio_config = ESP_ZB_DEFAULT_RADIO_CONFIG(),
         .host_config = ESP_ZB_DEFAULT_HOST_CONFIG(),
     };
+
+    init_hashtable(&ht);
+
     ESP_ERROR_CHECK(nvs_flash_init());
     ESP_ERROR_CHECK(esp_zb_platform_config(&config));
+    
     light_driver_init(LIGHT_DEFAULT_OFF);
     xTaskCreate(esp_zb_task, "Zigbee_main", 4096, NULL, 5, NULL);
 }
