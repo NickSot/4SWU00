@@ -1,5 +1,7 @@
 #include <stddef.h>
 #include <string.h>
+#include <stdbool.h>
+#include "esp_log.h"
 
 #include "tile_room_mapping.h"
 
@@ -54,6 +56,20 @@ float compute_occupancy_rate(RoomNode *room) {
     if (room->room_capacity == 0)
         return 0.0; // Avoid division by zero
     return ((float)room->current_visitor_count / (float)room->room_capacity) * 100.0;
+}
+
+void update_room_visitor_count(uint8_t esp_mac[MAC_LEN], bool increment) {
+    RoomNode *room = find_room_from_esp_mac(esp_mac);
+    if (room != NULL) {
+        if (increment) {
+            room->current_visitor_count++;
+        } else if (room->current_visitor_count > 0) {
+            room->current_visitor_count--;
+        }
+
+        room->room_occupancy = ((float)room->current_visitor_count / room->room_capacity) * 100.0f;
+        ESP_LOGI("tile_map", "Room %d occupancy rate: %.2f%%\n", room->roomID, room->room_occupancy);
+    }
 }
 
 void establish_neighbors() {

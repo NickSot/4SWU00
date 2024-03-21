@@ -15,7 +15,7 @@ typedef struct {
     float temperature;
     uint32_t last_ping;
     uint32_t adv_count; // advertisement packet count since power-up
-    uint32_t up_time; // time since power-up in seconds
+    uint32_t up_time;   // time since power-up in seconds
 } BeaconData;
 
 typedef struct {
@@ -34,7 +34,5 @@ BeaconData *get_beacon(BeaconHashTable *ht, uint8_t beacon_mac[MAC_LEN]);
 void print_hashtable(BeaconHashTable *ht);
 bool delete_beacon(BeaconHashTable *ht, uint8_t beacon_mac[MAC_LEN]);
 void check_and_delete_stale_beacons(BeaconHashTable *ht);
-
-
 
 #endif

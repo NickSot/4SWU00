@@ -1,7 +1,7 @@
 #include "beacon_hashtable.h"
-#include "tile_room_mapping.h"
 #include "esp_log.h"
 #include "esp_mac.h"
+#include "tile_room_mapping.h"
 #include <stddef.h>
 #include <string.h>
 
@@ -41,7 +41,7 @@ int insert_update_beacon(BeaconHashTable *ht, BeaconData data) {
             ht->table[try].occupied = true;
             // After successfully inserting a beacon
             update_room_visitor_count(data.esp_mac, true); // Increment visitor count
-            return 1; // New beacon data inserted
+            return 1;                                      // New beacon data inserted
         }
     }
     return 0; // table is full
@@ -103,26 +103,12 @@ void check_and_delete_stale_beacons(BeaconHashTable *ht) {
         if (ht->table[i].occupied) {
             uint32_t time_diff = current_time - ht->table[i].data.last_ping;
             if (time_diff > STALE_BEACON_THRESHOLD) {
-                update_room_visitor_count(ht->table[i].data.esp_mac, false); //Decrement visitor count
+                update_room_visitor_count(ht->table[i].data.esp_mac, false); // Decrement visitor count
                 // Beacon is considered stale, delete it
                 delete_beacon(ht, ht->table[i].data.beacon_mac);
                 ESP_LOGI("hashtable", "\tDeleted stale beacon: " MACSTR,
                          MAC2STR(ht->table[i].data.beacon_mac));
             }
         }
-    }
-}
-
-void update_room_visitor_count(uint8_t esp_mac[MAC_LEN], bool increment) {
-    RoomNode* room = find_room_from_esp_mac(esp_mac);
-    if (room != NULL) {
-        if (increment) {
-            room->current_visitor_count++;
-        } else if (room->current_visitor_count > 0) {
-            room->current_visitor_count--;
-        }
-
-        room->room_occupancy = ((float)room->current_visitor_count / room->room_capacity) * 100.0f;
-        printf("Room %d occupancy rate: %.2f%%\n", room->roomID, room->room_occupancy);
     }
 }
