@@ -24,7 +24,7 @@ esp_err_t send_beacon_data(BeaconData *beacon_data_ptr) {
     return esp_zb_aps_data_request(&cmd_req);
 }
 
-esp_err_t receive_beacon_data(esp_zb_apsde_data_confirm_t *packet, BeaconHashTable *ht_ptr) {
+esp_err_t receive_beacon_data(esp_zb_apsde_data_ind_t *packet, BeaconHashTable *ht_ptr) {
     if (packet->asdu_length != sizeof(BeaconData)) {
         ESP_LOGW(TAG, "Ignoring data of length %ld", packet->asdu_length);
         return ESP_FAIL;

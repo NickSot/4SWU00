@@ -69,7 +69,7 @@ void esp_zb_app_signal_handler(esp_zb_app_signal_t *signal_struct) {
     switch (sig_type) {
         case ESP_ZB_ZDO_SIGNAL_SKIP_STARTUP:
             ESP_LOGI(TAG, "Zigbee stack initialized");
-            esp_zb_bdb_start_top_level_commissioning(ESP_ZB_BDB_MODE_INITIALIZATION);
+            ESP_ERROR_CHECK(esp_zb_bdb_start_top_level_commissioning(ESP_ZB_BDB_MODE_INITIALIZATION));
             break;
         case ESP_ZB_BDB_SIGNAL_DEVICE_FIRST_START:
         case ESP_ZB_BDB_SIGNAL_DEVICE_REBOOT:
@@ -88,7 +88,7 @@ void esp_zb_app_signal_handler(esp_zb_app_signal_t *signal_struct) {
                          extended_pan_id[7], extended_pan_id[6], extended_pan_id[5], extended_pan_id[4],
                          extended_pan_id[3], extended_pan_id[2], extended_pan_id[1], extended_pan_id[0],
                          esp_zb_get_pan_id(), esp_zb_get_current_channel());
-                esp_zb_bdb_start_top_level_commissioning(ESP_ZB_BDB_MODE_NETWORK_STEERING);
+                ESP_ERROR_CHECK(esp_zb_bdb_start_top_level_commissioning(ESP_ZB_BDB_MODE_NETWORK_STEERING));
             } else {
                 ESP_LOGI(TAG, "Restart network formation (status: %s)", esp_err_to_name(err_status));
                 esp_zb_scheduler_alarm((esp_zb_callback_t)bdb_start_top_level_commissioning_cb, ESP_ZB_BDB_MODE_NETWORK_FORMATION, 1000);
@@ -114,7 +114,7 @@ void esp_zb_app_signal_handler(esp_zb_app_signal_t *signal_struct) {
     }
 }
 
-void receive_beacon_data_handler(esp_zb_apsde_data_confirm_t confirm);
+void receive_beacon_data_handler(esp_zb_apsde_data_ind_t confirm);
 
 void esp_zb_task(void *pvParameters) {
     /* initialize Zigbee stack */
@@ -122,18 +122,20 @@ void esp_zb_task(void *pvParameters) {
     esp_zb_init(&zb_nwk_cfg);
 
     esp_zb_ep_list_t *endpoints_list = esp_zb_ep_list_create();
-    esp_zb_device_register(endpoints_list);
-    esp_zb_aps_data_confirm_handler_register(receive_beacon_data_handler);
+    ESP_ERROR_CHECK(esp_zb_device_register(endpoints_list));
+    // esp_zb_aps_data_confirm_handler_register(receive_beacon_data_handler);
+    esp_zb_aps_data_indication_handler_register(receive_beacon_data_handler);
 
-    esp_zb_set_primary_network_channel_set(ESP_ZB_PRIMARY_CHANNEL_MASK);
+    ESP_ERROR_CHECK(esp_zb_set_primary_network_channel_set(ESP_ZB_PRIMARY_CHANNEL_MASK));
     ESP_ERROR_CHECK(esp_zb_start(false));
     esp_zb_main_loop_iteration();
 }
 
 void send_hashtable_serial(BeaconHashTable *ht);
 
-void receive_beacon_data_handler(esp_zb_apsde_data_confirm_t confirm) {
+void receive_beacon_data_handler(esp_zb_apsde_data_ind_t confirm) {
     receive_beacon_data(&confirm, &ht);
+    print_hashtable(&ht);
     send_hashtable_serial(&ht);
 }
 
