@@ -75,7 +75,7 @@ void esp_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param) {
                         data.adv_count = eddystone_res.inform.tlm.adv_count;
                         data.up_time = eddystone_res.inform.tlm.time;
 
-                        int result = insert_update_beacon(&hash_table, data);
+                        int result = insert_update_beacon(hash_table, data);
                         if (result == 1) {
                             ESP_LOGI(__FILE__, "Beacon inserted: %d", true);
                         } else if (result == 2) {
