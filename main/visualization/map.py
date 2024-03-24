@@ -1,9 +1,10 @@
 import serial
 import matplotlib.pyplot as plt
+from matplotlib import patheffects
 from matplotlib.animation import FuncAnimation
 
 # initialize serial port
-# ser = serial.Serial('COM1', 115200)
+# ser = serial.Serial('COM', 115200)
 
 # initialize room occupancy data
 occupancy_data = {'Room1': 10, 'Room2': 60, 'Room3': 60, 'Room4': 80}
@@ -47,7 +48,9 @@ def draw_map(ax):
         x, y = patch.get_xy()  
         width, height = patch.get_width(), patch.get_height()  
         label_text = patch.get_label()  
-        ax.text(x + width / 2, y + height / 2, label_text, ha='center', va='center', color='black')
+        ax.text(x + width / 2, y + height / 2, label_text, ha='center', va='center', color='white', path_effects=[patheffects.withStroke(linewidth=2, foreground="black")])
+
+
 
     # draw doors
     ax.add_patch(plt.Rectangle((0.45, 0.39), 0.1, 0.02,  color='black', linewidth=0))
