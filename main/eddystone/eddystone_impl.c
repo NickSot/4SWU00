@@ -8,6 +8,7 @@
 #include "esp_log.h"
 
 #include "data_structures/beacon_hashtable.h"
+#include "zigbee/beacon_data_handle.h"
 
 static uint8_t (*bluetooth_mac)[MAC_LEN];
 static BeaconHashTable *hash_table;
@@ -75,13 +76,15 @@ void esp_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param) {
                         data.adv_count = eddystone_res.inform.tlm.adv_count;
                         data.up_time = eddystone_res.inform.tlm.time;
 
+                        send_beacon_data(&data);
+
                         int result = insert_update_beacon(hash_table, data);
                         if (result == 1) {
-                            ESP_LOGI(__FILE__, "Beacon inserted: %d", true);
+                            ESP_LOGI("EDDYSTONE_IMPL", "Beacon inserted: %d", true);
                         } else if (result == 2) {
-                            ESP_LOGI(__FILE__, "Beacon updated: %d", true);
+                            ESP_LOGI("EDDYSTONE_IMPL", "Beacon updated: %d", true);
                         } else if (result == 0) {
-                            ESP_LOGI(__FILE__, "Beacon processed: %d", false);
+                            ESP_LOGI("EDDYSTONE_IMPL", "Beacon processed: %d", false);
                         }
 
                         print_hashtable(hash_table);
@@ -118,7 +121,7 @@ void esp_eddystone_appRegister(void) {
     }
 }
 
-void esp_eddystone_init(BeaconHashTable *const ht, uint8_t  (*const bt_mac)[MAC_LEN]) {
+void esp_eddystone_init(BeaconHashTable *const ht, uint8_t (*const bt_mac)[MAC_LEN]) {
     hash_table = ht;
     bluetooth_mac = bt_mac;
 

@@ -1,13 +1,12 @@
 #include "beacon_hashtable.h"
 #include "esp_log.h"
-#include "esp_mac.h"
 #include "tile_room_mapping.h"
 #include <stddef.h>
 #include <string.h>
 
 #define STALE_BEACON_THRESHOLD 300000 // Time in milliseconds
 
-unsigned int hash_function(uint8_t beacon_mac[MAC_LEN]) {
+static unsigned int hash_function(uint8_t beacon_mac[MAC_LEN]) {
     unsigned long hash = 5381;
     int c;
     for (size_t i = 0; i < MAC_LEN; i++) {
@@ -23,7 +22,7 @@ void init_hashtable(BeaconHashTable *ht) {
     }
 }
 
-int insert_update_beacon(BeaconHashTable *ht, BeaconData data) {
+BeaconUpdateStatus insert_update_beacon(BeaconHashTable *ht, BeaconData data) {
     unsigned int index = hash_function(data.beacon_mac);
     for (int i = 0; i < HASH_TABLE_SIZE; i++) {
         int try = (index + i) % HASH_TABLE_SIZE; // linear probing
@@ -33,7 +32,7 @@ int insert_update_beacon(BeaconHashTable *ht, BeaconData data) {
                 // Beacon exists, update the existing data
                 ht->table[try].data = data;
                 ht->table[try].occupied = true;
-                return 2; // Beacon data updated
+                return BEACON_UPDATE; // Beacon data updated
             }
         } else {
             // Slot not occupied, insert new beacon data here
@@ -41,10 +40,10 @@ int insert_update_beacon(BeaconHashTable *ht, BeaconData data) {
             ht->table[try].occupied = true;
             // After successfully inserting a beacon
             update_room_visitor_count(data.esp_mac, true); // Increment visitor count
-            return 1;                                      // New beacon data inserted
+            return BEACON_INSERT;                          // New beacon data inserted
         }
     }
-    return 0; // table is full
+    return BEACON_DROPPED; // table is full
 }
 
 BeaconData *get_beacon(BeaconHashTable *ht, uint8_t beacon_mac[MAC_LEN]) {
@@ -64,15 +63,7 @@ void print_hashtable(BeaconHashTable *ht) {
         BeaconDataWrapper beacon_data = ht->table[i];
         BeaconData data = beacon_data.data;
         if (beacon_data.occupied) {
-            ESP_LOGI("hashtable", "\tBeacon: " MACSTR " ESP: " MACSTR " Last Ping: %ld | RSSI: %d dBm | Battery Voltage: %d mV | Temp deg C: %6.1f | adv: %ld | uptime: %ld",
-                     MAC2STR(data.beacon_mac),
-                     MAC2STR(data.esp_mac),
-                     data.last_ping,
-                     data.signal_strength,
-                     data.battery_voltage,
-                     data.temperature,
-                     data.adv_count,
-                     data.up_time);
+            ESP_LOGI("hashtable", "\t" BEACONSTR, BEACON2STR(data));
         }
     }
     ESP_LOGI("hashtable", "}");

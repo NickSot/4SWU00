@@ -1,14 +1,15 @@
 idf_component_register(
     SRCS
         "main.c"
-        # "esp_zb_coordinator.c"
-        # "network_flow_driver.c"
+        "monitor.c"
+        "tile.c"
 
         "eddystone/esp_eddystone_api.c"
         "eddystone/eddystone_impl.c"
 
-        "zigbee/esp_zb_end_device.c"
-        "zigbee/esp_zb_coordinator.c"
+        # "zigbee/esp_zb_end_device.c"
+        # "zigbee/esp_zb_coordinator.c"
+        "zigbee/beacon_data_handle.c"
 
         "data_structures/beacon_hashtable.c"
         "data_structures/tile_room_mapping.c"
