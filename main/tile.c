@@ -21,6 +21,15 @@ BeaconHashTable ht;
 
 static const char *TAG = "COMPASS_TILE";
 
+static esp_ble_scan_params_t ble_scan_params = {
+    .scan_type = BLE_SCAN_TYPE_ACTIVE,
+    .own_addr_type = BLE_ADDR_TYPE_PUBLIC,
+    .scan_filter_policy = BLE_SCAN_FILTER_ALLOW_ALL,
+    .scan_interval = 0x50,
+    .scan_window = 0x30,
+    .scan_duplicate = BLE_SCAN_DUPLICATE_DISABLE
+};
+
 // #if !defined ZB_ED_ROLE
 // #error Define ZB_ED_ROLE in idf.py menuconfig to compile light (End Device) source code.
 // #endif
@@ -36,13 +45,13 @@ void esp_zb_app_signal_handler(esp_zb_app_signal_t *signal_struct) {
     switch (sig_type) {
         case ESP_ZB_ZDO_SIGNAL_SKIP_STARTUP:
             ESP_LOGI(TAG, "Zigbee stack initialized");
-            esp_zb_bdb_start_top_level_commissioning(ESP_ZB_BDB_MODE_INITIALIZATION);
+            ESP_ERROR_CHECK(esp_zb_bdb_start_top_level_commissioning(ESP_ZB_BDB_MODE_INITIALIZATION));
             break;
         case ESP_ZB_BDB_SIGNAL_DEVICE_FIRST_START:
         case ESP_ZB_BDB_SIGNAL_DEVICE_REBOOT:
             if (err_status == ESP_OK) {
                 ESP_LOGI(TAG, "Start network steering");
-                esp_zb_bdb_start_top_level_commissioning(ESP_ZB_BDB_MODE_NETWORK_STEERING);
+                ESP_ERROR_CHECK(esp_zb_bdb_start_top_level_commissioning(ESP_ZB_BDB_MODE_NETWORK_STEERING));
             } else {
                 /* commissioning failed */
                 ESP_LOGW(TAG, "Failed to initialize Zigbee stack (status: %s)", esp_err_to_name(err_status));
@@ -56,6 +65,9 @@ void esp_zb_app_signal_handler(esp_zb_app_signal_t *signal_struct) {
                          extended_pan_id[7], extended_pan_id[6], extended_pan_id[5], extended_pan_id[4],
                          extended_pan_id[3], extended_pan_id[2], extended_pan_id[1], extended_pan_id[0],
                          esp_zb_get_pan_id(), esp_zb_get_current_channel());
+
+                /*<! set scan parameters */
+                esp_ble_gap_set_scan_params(&ble_scan_params);
             } else {
                 ESP_LOGI(TAG, "Network steering was not successful (status: %s)", esp_err_to_name(err_status));
                 esp_zb_scheduler_alarm((esp_zb_callback_t)bdb_start_top_level_commissioning_cb, ESP_ZB_BDB_MODE_NETWORK_STEERING, 1000);
@@ -72,7 +84,7 @@ static esp_err_t zb_attribute_handler(esp_zb_apsde_data_confirm_t *confirm) {
     ESP_LOGI(TAG, "Received message: endpoint(%d), data size(%d)",
              (int)confirm->src_endpoint, (int)confirm->asdu_length);
 
-    receive_beacon_data(confirm, &ht);
+    ESP_ERROR_CHECK(receive_beacon_data(confirm, &ht));
 
     return ESP_OK;
 }
@@ -81,7 +93,7 @@ static void zb_action_handler(esp_zb_apsde_data_confirm_t confirm) {
     switch (confirm.status) {
         case ESP_OK:
             // ret = zb_attribute_handler(&confirm);
-            zb_attribute_handler(&confirm);
+            ESP_ERROR_CHECK(zb_attribute_handler(&confirm));
             break;
         default:
             ESP_LOGW(TAG, "Receive Zigbee action(0x%d) callback", confirm.status);
@@ -95,22 +107,13 @@ static void esp_zb_task(void *pvParameters) {
     esp_zb_init(&zb_nwk_cfg);
 
     esp_zb_ep_list_t *esp_zb_on_off_light_ep = esp_zb_ep_list_create();
-    esp_zb_device_register(esp_zb_on_off_light_ep);
+    ESP_ERROR_CHECK(esp_zb_device_register(esp_zb_on_off_light_ep));
 
     esp_zb_aps_data_confirm_handler_register(zb_action_handler);
-    esp_zb_set_primary_network_channel_set(ESP_ZB_PRIMARY_CHANNEL_MASK);
+    ESP_ERROR_CHECK(esp_zb_set_primary_network_channel_set(ESP_ZB_PRIMARY_CHANNEL_MASK));
     ESP_ERROR_CHECK(esp_zb_start(false));
     esp_zb_main_loop_iteration();
 }
-
-static esp_ble_scan_params_t ble_scan_params = {
-    .scan_type = BLE_SCAN_TYPE_ACTIVE,
-    .own_addr_type = BLE_ADDR_TYPE_PUBLIC,
-    .scan_filter_policy = BLE_SCAN_FILTER_ALLOW_ALL,
-    .scan_interval = 0x50,
-    .scan_window = 0x30,
-    .scan_duplicate = BLE_SCAN_DUPLICATE_DISABLE
-};
 
 void tile_main() {
     init_hashtable(&ht);
@@ -129,13 +132,13 @@ void tile_main() {
     };
     ESP_ERROR_CHECK(esp_zb_platform_config(&config));
 
-    esp_read_mac(bt_mac, ESP_MAC_BT);
+    ESP_ERROR_CHECK(esp_read_mac(bt_mac, ESP_MAC_BT));
     ESP_LOGI("museum_compass", "Bluetooth MAC: " MACSTR, MAC2STR(bt_mac));
 
     esp_eddystone_init(&ht, &bt_mac);
 
     /*<! set scan parameters */
-    esp_ble_gap_set_scan_params(&ble_scan_params);
+    // esp_ble_gap_set_scan_params(&ble_scan_params);
 
     xTaskCreate(esp_zb_task, "Zigbee_main", 4096, NULL, 5, NULL);
 }

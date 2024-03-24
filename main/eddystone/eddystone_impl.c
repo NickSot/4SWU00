@@ -53,6 +53,7 @@ void esp_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param) {
                     esp_eddystone_result_t eddystone_res;
                     memset(&eddystone_res, 0, sizeof(eddystone_res));
                     esp_err_t ret = esp_eddystone_decode(scan_result->scan_rst.ble_adv, scan_result->scan_rst.adv_data_len, &eddystone_res);
+
                     if (ret) {
                         // error:The received data is not an eddystone frame packet or a correct eddystone frame packet.
                         // just return
@@ -76,15 +77,16 @@ void esp_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param) {
                         data.adv_count = eddystone_res.inform.tlm.adv_count;
                         data.up_time = eddystone_res.inform.tlm.time;
 
-                        send_beacon_data(&data);
+                        ESP_LOGI("TesT", BEACONSTR, BEACON2STR(data));
+                        ESP_ERROR_CHECK_WITHOUT_ABORT(send_beacon_data(&data));
 
                         int result = insert_update_beacon(hash_table, data);
                         if (result == 1) {
-                            ESP_LOGI("EDDYSTONE_IMPL", "Beacon inserted: %d", true);
+                            ESP_LOGI(__FILE__, "Beacon inserted: %d", true);
                         } else if (result == 2) {
-                            ESP_LOGI("EDDYSTONE_IMPL", "Beacon updated: %d", true);
+                            ESP_LOGI(__FILE__, "Beacon updated: %d", true);
                         } else if (result == 0) {
-                            ESP_LOGI("EDDYSTONE_IMPL", "Beacon processed: %d", false);
+                            ESP_LOGI(__FILE__, "Beacon processed: %d", false);
                         }
 
                         print_hashtable(hash_table);
@@ -126,7 +128,7 @@ void esp_eddystone_init(BeaconHashTable *const ht, uint8_t (*const bt_mac)[MAC_L
     bluetooth_mac = bt_mac;
 
     esp_bluedroid_config_t bluedroid_cfg = BT_BLUEDROID_INIT_CONFIG_DEFAULT();
-    esp_bluedroid_init_with_cfg(&bluedroid_cfg);
-    esp_bluedroid_enable();
+    ESP_ERROR_CHECK(esp_bluedroid_init_with_cfg(&bluedroid_cfg));
+    ESP_ERROR_CHECK(esp_bluedroid_enable());
     esp_eddystone_appRegister();
 }

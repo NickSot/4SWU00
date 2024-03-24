@@ -75,6 +75,15 @@ static esp_err_t esp_eddystone_get_inform(const uint8_t *buf, uint8_t len, esp_e
             ret = esp_eddystone_tlm_received(buf, len, res);
             break;
         }
+        case EDDYSTONE_FRAME_TYPE_UID:
+        case EDDYSTONE_FRAME_TYPE_URL: {
+            res->inform.tlm.version = 0;
+            res->inform.tlm.battery_voltage = 0;
+            res->inform.tlm.temperature = 0.0;
+            res->inform.tlm.adv_count = 0;
+            res->inform.tlm.time = 0;
+            break;
+        }
         default:
             break;
     }
